@@ -701,7 +701,7 @@
     .img-slider .slide {
       flex: 0 0 100%;
       scroll-snap-align: start;
-      object-fit: cover;
+      object-fit: contain; background: #ffffff;
       width: 100%;
       height: 100%;
     }
@@ -967,7 +967,7 @@
       width: 60px;
       height: 60px;
       border-radius: var(--radius-sm);
-      object-fit: cover;
+      object-fit: contain; background: #ffffff;
       background: var(--bg);
       border: 1px solid var(--border);
     }
@@ -1162,7 +1162,7 @@
     .image-preview-box img {
       width: 60px;
       height: 60px;
-      object-fit: cover;
+      object-fit: contain; background: #ffffff;
       border-radius: 6px;
       border: 1px solid var(--border);
     }
@@ -1461,6 +1461,108 @@
     }
     .catalog-admin-bar.active {
       display: flex;
+    }
+
+  
+    .stock-indicator {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 10px;
+      border-radius: 999px;
+      z-index: 3;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+    .stock-indicator.in-stock {
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #10b981;
+    }
+    .stock-indicator.out-stock {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+
+  
+    /* Product Detail Modal Styles */
+    .detail-gallery-wrap {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      background: #fdfaf5;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .detail-slider {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      width: 100%;
+      height: 100%;
+      scrollbar-width: none;
+      scroll-behavior: smooth;
+    }
+    .detail-slider::-webkit-scrollbar { display: none; }
+    .detail-slider .detail-slide {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      object-fit: contain;
+      background: #ffffff;
+      width: 100%;
+      height: 100%;
+    }
+    .detail-thumbs {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .detail-thumb {
+      width: 54px;
+      height: 54px;
+      border-radius: 8px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      background: #fff;
+    }
+    .detail-thumb.active {
+      border-color: var(--accent);
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    .detail-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .detail-price {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--primary);
+    }
+    .detail-price span {
+      font-size: 14px;
+      color: var(--accent);
+    }
+    .detail-desc-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.8;
+      margin-bottom: 20px;
+      background: var(--bg);
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
     }
 
   </style>
@@ -1913,6 +2015,11 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label">الكمية المتوفرة في المخزون (Stock) *</label>
+          <input type="number" id="prodStock" class="form-input" placeholder="مثال: 15" min="0" value="10" required />
+        </div>
+
+        <div class="form-group">
           <label class="form-label">صور المنتج (يمكنك اختيار أكثر من صورة) 📸</label>
           <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">
             ارفع صورة أو عدة صور من جهازك (سيتم ضغطها تلقائياً لحفظ المساحة):
@@ -1939,6 +2046,20 @@
           <button type="submit" class="btn btn-primary" id="saveProductBtn">حفظ المنتج ✨</button>
         </div>
       </form>
+    </div>
+  </div>
+
+
+  <!-- Product Details Quick-View Modal -->
+  <div class="modal-overlay" id="productDetailModal" onclick="if(event.target.id==='productDetailModal') closeProductDetailModal()">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title" id="detailModalTitle">تفاصيل المنتج</div>
+        <button class="drawer-close" onclick="closeProductDetailModal()">✕</button>
+      </div>
+      <div id="detailModalBody">
+        <!-- Dynamic Content -->
+      </div>
     </div>
   </div>
 
@@ -2206,6 +2327,7 @@
         <button class="btn btn-primary" style="padding: 8px 24px; font-size: 13px;" onclick="closeCustomDialog()">حسناً</button>
       `;
       document.getElementById("dialogOverlay").classList.add("active");
+      document.body.style.overflow = "hidden";
     }
 
     function showCustomConfirm(title, message, onConfirm, icon = "❓") {
@@ -2221,10 +2343,12 @@
         onConfirm();
       };
       document.getElementById("dialogOverlay").classList.add("active");
+      document.body.style.overflow = "hidden";
     }
 
     function closeCustomDialog() {
       document.getElementById("dialogOverlay").classList.remove("active");
+      document.body.style.overflow = "";
     }
 
     function loadData() {
@@ -2261,10 +2385,13 @@
         products = defaultProducts;
       }
 
-      // Format legacy string image data to array
+      // Format legacy string image data to array & ensure stock
       products.forEach(p => {
         if (!Array.isArray(p.img)) {
           p.img = p.img ? [p.img] : ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80"];
+        }
+        if (typeof p.stock !== 'number') {
+          p.stock = 10; // default stock indicator
         }
       });
 
@@ -2482,10 +2609,12 @@
       }
       document.getElementById("importJsonText").value = "";
       document.getElementById("backupModal").classList.add("active");
+      document.body.style.overflow = "hidden";
     }
 
     function closeBackupModal() {
       document.getElementById("backupModal").classList.remove("active");
+      document.body.style.overflow = "";
     }
 
     function exportBackupJson() {
@@ -2628,7 +2757,7 @@
 
         return `
           <div class="product-card" id="card-${p.id}">
-            <div class="product-img-wrap">
+            <div class="product-img-wrap" style="cursor: pointer;" onclick="openProductDetailModal(${p.id})" title="اضغط لعرض التفاصيل والصور">
               ${isMulti ? `
                 <button class="slider-arrow right" onclick="scrollSlider(${p.id}, -1)">❮</button>
                 <button class="slider-arrow left" onclick="scrollSlider(${p.id}, 1)">❯</button>
@@ -2642,6 +2771,9 @@
                 <img src="${images[0]}" class="slide" loading="lazy" />
               `}
               ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
+              <span class="stock-indicator ${p.stock > 0 ? 'in-stock' : 'out-stock'}">
+                ${p.stock > 0 ? `🟢 متوفر (${p.stock})` : '🔴 نفذت الكمية'}
+              </span>
               <div class="product-admin-actions ${isAdmin ? 'active' : ''}">
                 <button class="prod-action-btn edit" title="تعديل المنتج" onclick="editProduct(${p.id})">✏️</button>
                 <button class="prod-action-btn del" title="حذف المنتج" onclick="deleteProduct(${p.id})">🗑️</button>
@@ -2649,7 +2781,7 @@
             </div>
             <div class="product-details">
               <span class="product-cat">${getCatName(p.category)}</span>
-              <h3 class="product-title">${p.title}</h3>
+              <h3 class="product-title" style="cursor: pointer;" onclick="openProductDetailModal(${p.id})" title="اضغط لعرض التفاصيل والصور">${p.title}</h3>
               <p class="product-desc">${p.desc || 'منتج مميز من باندا جاليري'}</p>
               <div class="product-price-box">
                 <div class="product-price">
@@ -2725,6 +2857,11 @@
     function buyDirect(id) {
       const prod = products.find(p => p.id === id);
       if (!prod) return;
+      
+      if (prod.stock <= 0) {
+        showCustomAlert("نفذت الكمية", "عذراً، هذا المنتج غير متوفر حالياً في المخزون.", "❌");
+        return;
+      }
 
       const firstImg = Array.isArray(prod.img) ? prod.img[0] : prod.img;
       const msg = `مرحبًا Panda Gallery 🐼✨
@@ -2845,6 +2982,7 @@
         document.getElementById("prodCategory").value = prod.category;
         document.getElementById("prodPrice").value = prod.price;
         document.getElementById("prodBadge").value = prod.badge || '';
+        document.getElementById("prodStock").value = (typeof prod.stock === 'number') ? prod.stock : 10;
         document.getElementById("prodDesc").value = prod.desc || '';
         document.getElementById("prodImgUrl").value = '';
         
@@ -2858,6 +2996,7 @@
       }
 
       modal.classList.add("active");
+      document.body.style.overflow = "hidden";
     }
 
     function closeProductModal() {
@@ -2881,6 +3020,7 @@
       const category = document.getElementById("prodCategory").value;
       const price = parseFloat(document.getElementById("prodPrice").value);
       const badge = document.getElementById("prodBadge").value.trim();
+      const stock = parseInt(document.getElementById("prodStock").value) || 0;
       const desc = document.getElementById("prodDesc").value.trim();
 
       let finalImages = activeUploadedImages.length ? [...activeUploadedImages] : [
@@ -2897,6 +3037,7 @@
           item.category = category;
           item.price = price;
           item.badge = badge;
+          item.stock = stock;
           item.img = finalImages;
           item.desc = desc;
         }
@@ -2907,6 +3048,7 @@
           category,
           price,
           badge,
+          stock,
           img: finalImages,
           desc
         };
@@ -2958,10 +3100,12 @@
       }
       renderCategoryManagerList();
       document.getElementById("categoryModal").classList.add("active");
+      document.body.style.overflow = "hidden";
     }
 
     function closeCategoryModal() {
       document.getElementById("categoryModal").classList.remove("active");
+      document.body.style.overflow = "";
     }
 
     function handleCategoryModalClick(e) {
@@ -3011,7 +3155,21 @@
     // Cart Management
     function addToCart(id) {
       const prod = products.find(p => p.id === id);
+      if (!prod) return;
+      
+      if (prod.stock <= 0) {
+        showCustomAlert("نفذت الكمية", "عذراً، هذا المنتج غير متوفر حالياً في المخزون.", "❌");
+        return;
+      }
+
       const existing = cart.find(item => item.id === id);
+      const currentCartQty = existing ? existing.qty : 0;
+
+      if (currentCartQty + 1 > prod.stock) {
+        showCustomAlert("تنبيه المخزون", `عذراً، الكمية المطلوبة تتجاوز المتاح في المخزون (${prod.stock} قطعة فقط).`, "⚠️");
+        return;
+      }
+
       if (existing) {
         existing.qty += 1;
       } else {
@@ -3024,7 +3182,15 @@
     function changeQty(id, delta) {
       const item = cart.find(i => i.id === id);
       if (!item) return;
-      item.qty += delta;
+      const prod = products.find(p => p.id === id);
+
+      const newQty = item.qty + delta;
+      if (newQty > prod.stock) {
+        showCustomAlert("تنبيه المخزون", `عذراً، لا يمكن إضافة المزيد. المتاح في المخزون (${prod.stock} قطعة فقط).`, "⚠️");
+        return;
+      }
+
+      item.qty = newQty;
       if (item.qty <= 0) {
         cart = cart.filter(i => i.id !== id);
       }
@@ -3096,11 +3262,13 @@
 
     function openCart() {
       document.getElementById("cartDrawer").classList.add("active");
+      document.body.style.overflow = "hidden";
       document.getElementById("drawerOverlay").classList.add("active");
     }
 
     function closeCart() {
       document.getElementById("cartDrawer").classList.remove("active");
+      document.body.style.overflow = "";
       document.getElementById("drawerOverlay").classList.remove("active");
     }
 
@@ -3160,10 +3328,12 @@
       document.getElementById("btnSms").href = smsUrl;
 
       document.getElementById("orderModal").classList.add("active");
+      document.body.style.overflow = "hidden";
     }
 
     function closeOrderModal() {
       document.getElementById("orderModal").classList.remove("active");
+      document.body.style.overflow = "";
     }
 
     function handleModalOverlayClick(e) {
@@ -3220,6 +3390,98 @@
           img.style.display = "none";
           def.style.display = "block";
         }
+      }
+    }
+
+    
+    // Product Details Modal Logic
+    function openProductDetailModal(id) {
+      const prod = products.find(p => p.id === id);
+      if (!prod) return;
+      document.body.style.overflow = 'hidden';
+
+      const images = Array.isArray(prod.img) && prod.img.length ? prod.img : ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80"];
+      const isMulti = images.length > 1;
+
+      document.getElementById("detailModalTitle").innerText = prod.title;
+      
+      let htmlContent = `
+        <div class="detail-gallery-wrap">
+          ${isMulti ? `
+            <button class="slider-arrow right" onclick="scrollDetailSlider(${prod.id}, -1)">❮</button>
+            <button class="slider-arrow left" onclick="scrollDetailSlider(${prod.id}, 1)">❯</button>
+            <div class="detail-slider" id="detailSlider-${prod.id}" onscroll="updateDetailThumb(${prod.id})">
+              ${images.map(src => `<img src="${src}" class="detail-slide" />`).join('')}
+            </div>
+          ` : `
+            <img src="${images[0]}" style="width:100%; height:100%; object-fit:contain; background:#fff;" />
+          `}
+          ${prod.badge ? `<span class="product-badge">${prod.badge}</span>` : ''}
+          <span class="stock-indicator ${prod.stock > 0 ? 'in-stock' : 'out-stock'}" style="bottom: 12px; right: 12px;">
+            ${prod.stock > 0 ? `🟢 متوفر (${prod.stock} قطعة)` : '🔴 نفذت الكمية'}
+          </span>
+        </div>
+
+        ${isMulti ? `
+          <div class="detail-thumbs" id="detailThumbs-${prod.id}">
+            ${images.map((src, idx) => `<img src="${src}" class="detail-thumb ${idx===0?'active':''}" onclick="jumpDetailSlide(${prod.id}, ${idx})" />`).join('')}
+          </div>
+        ` : ''}
+
+        <div style="margin-top: 14px;">
+          <span class="product-cat">${getCatName(prod.category)}</span>
+          <div class="detail-info-row">
+            <h3 style="font-size: 18px; font-weight: 800; color: var(--primary);">${prod.title}</h3>
+            <div class="detail-price">${prod.price} <span>ج.م</span></div>
+          </div>
+          <div class="detail-desc-text">
+            <strong>تفاصيل المنتج:</strong><br>
+            ${prod.desc || 'لا توجد تفاصيل إضافية مسجلة لهذا المنتج.'}
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" style="flex: 1; justify-content: center; padding: 12px;" onclick="addToCart(${prod.id}); closeProductDetailModal();">
+              🛒 إضافة إلى السلة
+            </button>
+            <button class="btn" style="flex: 2; justify-content: center; background: var(--whatsapp-green); color: #fff; padding: 12px;" onclick="buyDirect(${prod.id}); closeProductDetailModal();">
+              💬 اطلب الآن عبر الواتساب
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("detailModalBody").innerHTML = htmlContent;
+      document.getElementById("productDetailModal").classList.add("active");
+    }
+
+    function closeProductDetailModal() {
+      document.getElementById("productDetailModal").classList.remove("active");
+      document.body.style.overflow = '';
+    }
+
+    function scrollDetailSlider(prodId, direction) {
+      const slider = document.getElementById(`detailSlider-${prodId}`);
+      if (slider) {
+        slider.scrollBy({ left: direction * slider.clientWidth, behavior: 'smooth' });
+      }
+    }
+
+    function updateDetailThumb(prodId) {
+      const slider = document.getElementById(`detailSlider-${prodId}`);
+      const thumbsContainer = document.getElementById(`detailThumbs-${prodId}`);
+      if (slider && thumbsContainer) {
+        const thumbs = thumbsContainer.querySelectorAll('.detail-thumb');
+        const activeIndex = Math.round(Math.abs(slider.scrollLeft) / slider.clientWidth);
+        thumbs.forEach((t, idx) => {
+          t.classList.toggle('active', idx === activeIndex);
+        });
+      }
+    }
+
+    function jumpDetailSlide(prodId, index) {
+      const slider = document.getElementById(`detailSlider-${prodId}`);
+      if (slider) {
+        slider.scrollTo({ left: index * slider.clientWidth, behavior: 'smooth' });
       }
     }
 
