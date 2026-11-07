@@ -1565,6 +1565,21 @@
       border: 1px solid var(--border-light);
     }
 
+  
+    
+    html.modal-open, body.modal-open {
+      overflow: hidden !important;
+      height: 100vh !important;
+      position: relative !important;
+    }
+
+    body.modal-open {
+      overflow: hidden !important;
+      position: fixed !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
   </style>
 </head>
 <body>
@@ -2327,7 +2342,7 @@
         <button class="btn btn-primary" style="padding: 8px 24px; font-size: 13px;" onclick="closeCustomDialog()">حسناً</button>
       `;
       document.getElementById("dialogOverlay").classList.add("active");
-      document.body.style.overflow = "hidden";
+      document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
     }
 
     function showCustomConfirm(title, message, onConfirm, icon = "❓") {
@@ -2343,12 +2358,12 @@
         onConfirm();
       };
       document.getElementById("dialogOverlay").classList.add("active");
-      document.body.style.overflow = "hidden";
+      document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
     }
 
     function closeCustomDialog() {
       document.getElementById("dialogOverlay").classList.remove("active");
-      document.body.style.overflow = "";
+      document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
     }
 
     function loadData() {
@@ -2609,12 +2624,12 @@
       }
       document.getElementById("importJsonText").value = "";
       document.getElementById("backupModal").classList.add("active");
-      document.body.style.overflow = "hidden";
+      document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
     }
 
     function closeBackupModal() {
       document.getElementById("backupModal").classList.remove("active");
-      document.body.style.overflow = "";
+      document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
     }
 
     function exportBackupJson() {
@@ -2775,6 +2790,8 @@
                 ${p.stock > 0 ? `🟢 متوفر (${p.stock})` : '🔴 نفذت الكمية'}
               </span>
               <div class="product-admin-actions ${isAdmin ? 'active' : ''}">
+                <button class="prod-action-btn" title="إنقاص المخزون (-1)" onclick="adjustStock(${p.id}, -1)" style="background:#fee2e2; color:#b91c1c; font-weight:bold;">-</button>
+                <button class="prod-action-btn" title="زيادة المخزون (+1)" onclick="adjustStock(${p.id}, 1)" style="background:#d1fae5; color:#047857; font-weight:bold;">+</button>
                 <button class="prod-action-btn edit" title="تعديل المنتج" onclick="editProduct(${p.id})">✏️</button>
                 <button class="prod-action-btn del" title="حذف المنتج" onclick="deleteProduct(${p.id})">🗑️</button>
               </div>
@@ -2829,11 +2846,15 @@
     function openCategoryDrawer() {
       document.getElementById("catDrawer").classList.add("active");
       document.getElementById("catDrawerOverlay").classList.add("active");
+      document.documentElement.classList.add("modal-open");
+      document.body.classList.add("modal-open");
     }
 
     function closeCategoryDrawer() {
       document.getElementById("catDrawer").classList.remove("active");
       document.getElementById("catDrawerOverlay").classList.remove("active");
+      document.documentElement.classList.remove("modal-open");
+      document.body.classList.remove("modal-open");
     }
 
     function filterCategory(catId, el) {
@@ -2862,6 +2883,11 @@
         showCustomAlert("نفذت الكمية", "عذراً، هذا المنتج غير متوفر حالياً في المخزون.", "❌");
         return;
       }
+
+      // Decrement stock by 1 like Amazon when customer clicks order
+      prod.stock = Math.max(0, prod.stock - 1);
+      saveProducts();
+      renderProducts();
 
       const firstImg = Array.isArray(prod.img) ? prod.img[0] : prod.img;
       const msg = `مرحبًا Panda Gallery 🐼✨
@@ -2996,7 +3022,7 @@
       }
 
       modal.classList.add("active");
-      document.body.style.overflow = "hidden";
+      document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
     }
 
     function closeProductModal() {
@@ -3100,12 +3126,12 @@
       }
       renderCategoryManagerList();
       document.getElementById("categoryModal").classList.add("active");
-      document.body.style.overflow = "hidden";
+      document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
     }
 
     function closeCategoryModal() {
       document.getElementById("categoryModal").classList.remove("active");
-      document.body.style.overflow = "";
+      document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
     }
 
     function handleCategoryModalClick(e) {
@@ -3262,13 +3288,13 @@
 
     function openCart() {
       document.getElementById("cartDrawer").classList.add("active");
-      document.body.style.overflow = "hidden";
+      document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
       document.getElementById("drawerOverlay").classList.add("active");
     }
 
     function closeCart() {
       document.getElementById("cartDrawer").classList.remove("active");
-      document.body.style.overflow = "";
+      document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
       document.getElementById("drawerOverlay").classList.remove("active");
     }
 
@@ -3306,8 +3332,22 @@
     }
 
     function proceedToCheckoutModal() {
+      if (cart.length === 0) return;
+
+      // Decrement stock for each item in cart
+      cart.forEach(cartItem => {
+        const prod = products.find(p => p.id === cartItem.id);
+        if (prod) {
+          prod.stock = Math.max(0, prod.stock - cartItem.qty);
+        }
+      });
+      saveProducts();
+      renderProducts();
+
       closeCart();
       const msg = generateOrderText();
+      cart = []; // clear cart after order
+      updateCartUI();
       openOrderModalWithText(msg);
     }
 
@@ -3328,12 +3368,12 @@
       document.getElementById("btnSms").href = smsUrl;
 
       document.getElementById("orderModal").classList.add("active");
-      document.body.style.overflow = "hidden";
+      document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
     }
 
     function closeOrderModal() {
       document.getElementById("orderModal").classList.remove("active");
-      document.body.style.overflow = "";
+      document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
     }
 
     function handleModalOverlayClick(e) {
@@ -3398,7 +3438,7 @@
     function openProductDetailModal(id) {
       const prod = products.find(p => p.id === id);
       if (!prod) return;
-      document.body.style.overflow = 'hidden';
+      document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
 
       const images = Array.isArray(prod.img) && prod.img.length ? prod.img : ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?auto=format&fit=crop&w=600&q=80"];
       const isMulti = images.length > 1;
@@ -3456,7 +3496,7 @@
 
     function closeProductDetailModal() {
       document.getElementById("productDetailModal").classList.remove("active");
-      document.body.style.overflow = '';
+      document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
     }
 
     function scrollDetailSlider(prodId, direction) {
@@ -3483,6 +3523,22 @@
       if (slider) {
         slider.scrollTo({ left: index * slider.clientWidth, behavior: 'smooth' });
       }
+    }
+
+    
+    // Admin Quick Stock Adjuster (+1 / -1)
+    function adjustStock(id, delta) {
+      if (!isAdmin) {
+        openAdminLoginModal();
+        return;
+      }
+      const prod = products.find(p => p.id === id);
+      if (!prod) return;
+
+      prod.stock = Math.max(0, (prod.stock || 0) + delta);
+      saveProducts();
+      renderProducts();
+      showToast(`تم تحديث مخزون "${prod.title}" إلى (${prod.stock}) 📦`);
     }
 
     window.addEventListener("DOMContentLoaded", init);
