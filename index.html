@@ -3144,6 +3144,17 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
         products = defaultProducts;
       }
 
+      // Keep a valid catalog available even when old browser storage is empty or malformed.
+      if (!Array.isArray(categories) || categories.length === 0) categories = defaultCategories.slice();
+      if (!categories.some(c => c && c.id === 'all')) categories.unshift({ id: 'all', name: 'الكل 🌸' });
+      if (!Array.isArray(products)) products = defaultProducts.slice();
+      try {
+        localStorage.setItem("panda_categories", JSON.stringify(categories));
+        localStorage.setItem("panda_products", JSON.stringify(products));
+      } catch (e) {
+        console.warn("Could not persist restored catalog data:", e);
+      }
+
       // Format legacy string image data to array & ensure stock
       products.forEach(p => {
         if (!Array.isArray(p.img)) {
@@ -3175,7 +3186,12 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
         }
       });
 
-      isAdmin = sessionStorage.getItem("panda_admin_logged") === "true";
+      try {
+        isAdmin = sessionStorage.getItem("panda_admin_logged") === "true";
+      } catch (e) {
+        isAdmin = false;
+        console.warn("Admin session storage is unavailable:", e);
+      }
     }
 
     function saveCategories() {
@@ -3256,9 +3272,16 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
 
     function handleAdminLogin(e) {
       e.preventDefault();
-      const entered = document.getElementById("adminPasswordInput").value;
-      
-      if (btoa(entered) === ADMIN_PASS_HASH) {
+      const entered = document.getElementById("adminPasswordInput").value.trim();
+      let enteredHash = "";
+      try {
+        enteredHash = btoa(entered);
+      } catch (error) {
+        showCustomAlert("خطأ في الدخول", "تعذر التحقق من كلمة المرور. يرجى استخدام لوحة مفاتيح إنجليزية.", "🔒");
+        return;
+      }
+
+      if (enteredHash === ADMIN_PASS_HASH) {
         isAdmin = true;
         sessionStorage.setItem("panda_admin_logged", "true");
         closeAdminLoginModal();
