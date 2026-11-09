@@ -1838,7 +1838,7 @@ zVuUN/wD4Xi/8RWJP20j0i0jsx7NW5X/C8X/iKEJ6cPYZZj+Wi+kV/o17lf8AC8X/AIij+Wi+kV/o17l
         </a>
       </div>
       <div class="nav-actions">
-        <button class="admin-login-btn" id="navAdminBtn" onclick="handleAdminNavClick()">
+        <button class="admin-login-btn" id="navAdminBtn" type="button">
           <span id="navAdminBtnText">🔒 تسجيل دخول الإدارة</span>
         </button>
 
@@ -1876,7 +1876,7 @@ zVuUN/wD4Xi/8RWJP20j0i0jsx7NW5X/C8X/iKEJ6cPYZZj+Wi+kV/o17lf8AC8X/AIij+Wi+kV/o17l
     <div class="catalog-layout">
       <div class="catalog-content">
         <div class="controls-bar">
-          <button type="button" class="cat-drawer-trigger-pill" onclick="openCategoryDrawer()">
+          <button type="button" class="cat-drawer-trigger-pill" id="categoryDrawerTrigger">
             <span class="mini-dashes">
               <span></span>
               <span></span>
@@ -1981,7 +1981,7 @@ zVuUN/wD4Xi/8RWJP20j0i0jsx7NW5X/C8X/iKEJ6cPYZZj+Wi+kV/o17lf8AC8X/AIij+Wi+kV/o17l
         <div class="modal-title">🔐 تسجيل دخول المدير (Admin)</div>
         <button class="drawer-close" onclick="closeAdminLoginModal()">✕</button>
       </div>
-      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+      <form id="adminLoginForm">
         <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
           أدخل كلمة مرور الإدارة للتحكم في إضافة وتعديل المنتجات والأقسام.
         </p>
@@ -2214,9 +2214,9 @@ zVuUN/wD4Xi/8RWJP20j0i0jsx7NW5X/C8X/iKEJ6cPYZZj+Wi+kV/o17lf8AC8X/AIij+Wi+kV/o17l
   </div>
 
   <!-- Floating Direct Contact Button -->
-  <button class="floating-wa" onclick="openDirectOrderModal()" title="تواصل مع باندا جاليري">
+  <a class="floating-wa" href="https://wa.me/201146308806" target="_blank" rel="noopener noreferrer" aria-label="تواصل مع باندا جاليري على واتساب" title="تواصل مع باندا جاليري">
     💬
-  </button>
+  </a>
 
   <!-- Toast Message -->
   <div class="toast" id="toastMessage">
@@ -3144,6 +3144,22 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
         products = defaultProducts;
       }
 
+      // Keep a valid catalog available even when old browser storage is empty or malformed.
+      // Reject stale or malformed browser data and restore the embedded catalog.
+      if (!Array.isArray(categories)) categories = [];
+      categories = categories.filter(c => c && typeof c.id === 'string' && typeof c.name === 'string' && c.name.trim());
+      if (categories.length === 0) categories = defaultCategories.map(c => ({ ...c }));
+      if (!categories.some(c => c.id === 'all')) categories.unshift({ id: 'all', name: 'الكل 🌸' });
+      if (!Array.isArray(products)) products = [];
+      products = products.filter(p => p && (typeof p.id === 'number' || typeof p.id === 'string') && typeof p.title === 'string' && p.title.trim());
+      if (products.length === 0 && Array.isArray(defaultProducts) && defaultProducts.length) products = defaultProducts.map(p => ({ ...p }));
+      try {
+        localStorage.setItem("panda_categories", JSON.stringify(categories));
+        localStorage.setItem("panda_products", JSON.stringify(products));
+      } catch (e) {
+        console.warn("Could not persist restored catalog data:", e);
+      }
+
       // Format legacy string image data to array & ensure stock
       products.forEach(p => {
         if (!Array.isArray(p.img)) {
@@ -3175,7 +3191,12 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
         }
       });
 
-      isAdmin = sessionStorage.getItem("panda_admin_logged") === "true";
+      try {
+        isAdmin = sessionStorage.getItem("panda_admin_logged") === "true";
+      } catch (e) {
+        isAdmin = false;
+        console.warn("Admin session storage is unavailable:", e);
+      }
     }
 
     function saveCategories() {
@@ -3198,12 +3219,18 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
     }
 
     function init() {
-      loadData();
-      applyCustomCover(localStorage.getItem('panda_custom_cover'));
-      renderCategoryTabs();
-      renderProducts();
-      updateCartUI();
-      updateAdminVisibilityUI();
+      try { loadData(); } catch (e) {
+        console.error('Catalog initialization failed; using embedded catalog.', e);
+        categories = defaultCategories.map(c => ({ ...c }));
+        products = defaultProducts.map(p => ({ ...p }));
+      }
+      let savedCover = null;
+      try { savedCover = localStorage.getItem('panda_custom_cover'); } catch (e) { console.warn('Custom cover storage unavailable.', e); }
+      try { applyCustomCover(savedCover); } catch (e) { console.warn('Could not apply custom cover.', e); }
+      try { renderCategoryTabs(); } catch (e) { console.error('Category rendering failed.', e); }
+      try { renderProducts(); } catch (e) { console.error('Product rendering failed.', e); }
+      try { updateCartUI(); } catch (e) { console.warn('Cart UI initialization failed.', e); }
+      try { updateAdminVisibilityUI(); } catch (e) { console.warn('Admin UI initialization failed.', e); }
     }
 
     // Admin Authentication Handlers
@@ -3212,15 +3239,9 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
       const catalogBar = document.getElementById("catalogAdminBar");
       const navBtnText = document.getElementById("navAdminBtnText");
 
-      if (isAdmin) {
-        indicator.classList.add("active");
-        catalogBar.classList.add("active");
-        navBtnText.innerHTML = "👑 لوحة الإدارة";
-      } else {
-        indicator.classList.remove("active");
-        catalogBar.classList.remove("active");
-        navBtnText.innerHTML = "🔒 تسجيل دخول الإدارة";
-      }
+      if (indicator) indicator.classList.toggle("active", !!isAdmin);
+      if (catalogBar) catalogBar.classList.toggle("active", !!isAdmin);
+      if (navBtnText) navBtnText.innerHTML = isAdmin ? "👑 لوحة الإدارة" : "🔒 تسجيل دخول الإدارة";
 
       document.querySelectorAll(".product-admin-actions").forEach(el => {
         if (isAdmin) el.classList.add("active");
@@ -3256,11 +3277,18 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
 
     function handleAdminLogin(e) {
       e.preventDefault();
-      const entered = document.getElementById("adminPasswordInput").value;
-      
-      if (btoa(entered) === ADMIN_PASS_HASH) {
+      const entered = document.getElementById("adminPasswordInput").value.trim();
+      let enteredHash = "";
+      try {
+        enteredHash = btoa(entered);
+      } catch (error) {
+        showCustomAlert("خطأ في الدخول", "تعذر التحقق من كلمة المرور. يرجى استخدام لوحة مفاتيح إنجليزية.", "🔒");
+        return;
+      }
+
+      if (enteredHash === ADMIN_PASS_HASH) {
         isAdmin = true;
-        sessionStorage.setItem("panda_admin_logged", "true");
+        try { sessionStorage.setItem("panda_admin_logged", "true"); } catch (storageError) { console.warn("Admin session could not be saved:", storageError); }
         closeAdminLoginModal();
         updateAdminVisibilityUI();
         showToast("مرحباً بك! تم تسجيل الدخول كمدير بنجاح 👑");
@@ -3466,7 +3494,7 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
       }
     }
 
-    async async function handleChangePassword(e) {
+    async function handleChangePassword(e) {
       e.preventDefault();
       const current = document.getElementById("currentPassInput").value;
       const newP = document.getElementById("newPassInput").value;
@@ -3516,7 +3544,9 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
 
       const filtered = products.filter(p => {
         const matchesCat = (currentCategory === 'all' || p.category === currentCategory);
-        const matchesSearch = (p.title.includes(searchQuery) || (p.desc && p.desc.includes(searchQuery)));
+        const title = typeof p.title === 'string' ? p.title : '';
+        const desc = typeof p.desc === 'string' ? p.desc : '';
+        const matchesSearch = (title.includes(searchQuery) || desc.includes(searchQuery));
         return matchesCat && matchesSearch;
       });
 
@@ -4190,7 +4220,7 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
       document.getElementById("modalOrderPreview").innerText = msg;
 
       const encoded = encodeURIComponent(msg);
-      const nativeWaUrl = `whatsapp://send?phone=${phone}&text=${encoded}`;
+      const nativeWaUrl = `https://wa.me/${phone}?text=${encoded}`;
       document.getElementById("btnNativeWa").href = nativeWaUrl;
 
       const smsUrl = `sms:+${phone}?body=${encoded}`;
@@ -4478,7 +4508,60 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
       `;
     }
 
-    window.addEventListener("DOMContentLoaded", init);
+    // Explicit globals keep inline controls working across static hosting environments.
+    window.handleAdminNavClick = handleAdminNavClick;
+    window.handleAdminLogin = handleAdminLogin;
+    window.openDirectOrderModal = openDirectOrderModal;
+    window.openOrderModalWithText = openOrderModalWithText;
+    // Critical controls use explicit listeners so they still work if inline handlers
+    // are restricted by the hosting platform's Content-Security-Policy.
+    function bootPandaGallery() {
+      if (window.__pandaGalleryBooted) return;
+      window.__pandaGalleryBooted = true;
+
+      const adminButton = document.getElementById("navAdminBtn");
+      if (adminButton) {
+        adminButton.addEventListener("click", function (event) {
+          event.preventDefault();
+          try { handleAdminNavClick(); }
+          catch (error) { console.error("Admin panel could not be opened:", error); }
+        });
+      }
+
+      const loginForm = document.getElementById("adminLoginForm");
+      if (loginForm) {
+        loginForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          try { handleAdminLogin(event); }
+          catch (error) {
+            console.error("Admin login failed:", error);
+            showCustomAlert("خطأ في الدخول", "حدث خطأ أثناء تسجيل الدخول. يرجى تحديث الصفحة والمحاولة مرة أخرى.", "🔒");
+          }
+        });
+      }
+
+      const categoryTrigger = document.getElementById("categoryDrawerTrigger");
+      if (categoryTrigger) {
+        categoryTrigger.addEventListener("click", function (event) {
+          event.preventDefault();
+          try { openCategoryDrawer(); }
+          catch (error) { console.error("Category drawer could not be opened:", error); }
+        });
+      }
+
+      try { init(); }
+      catch (error) {
+        console.error("Panda Gallery startup failed:", error);
+        const grid = document.getElementById("productGrid");
+        if (grid) grid.innerHTML = '<p style="padding:24px;text-align:center">تعذر تحميل المنتجات. يرجى تحديث الصفحة أو التواصل مع المتجر.</p>';
+      }
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", bootPandaGallery, { once: true });
+    } else {
+      bootPandaGallery();
+    }
   </script>
 </body>
 </html>
