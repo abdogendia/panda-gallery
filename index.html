@@ -1082,6 +1082,11 @@
     .modal-overlay.active {
       opacity: 1;
       pointer-events: auto;
+      visibility: visible;
+    }
+    #adminLoginModal.active {
+      display: flex !important;
+      z-index: 99999 !important;
     }
     .modal-card {
       background: var(--surface);
@@ -1838,7 +1843,7 @@ zVuUN/wD4Xi/8RWJP20j0i0jsx7NW5X/C8X/iKEJ6cPYZZj+Wi+kV/o17lf8AC8X/AIij+Wi+kV/o17l
         </a>
       </div>
       <div class="nav-actions">
-        <button class="admin-login-btn" id="navAdminBtn" type="button">
+        <button class="admin-login-btn" id="navAdminBtn" type="button" onclick="handleAdminNavClick()">
           <span id="navAdminBtnText">🔒 تسجيل دخول الإدارة</span>
         </button>
 
@@ -3263,8 +3268,17 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
     }
 
     function openAdminLoginModal() {
-      document.getElementById("adminLoginForm").reset();
-      document.getElementById("adminLoginModal").classList.add("active");
+      const modal = document.getElementById("adminLoginModal");
+      const form = document.getElementById("adminLoginForm");
+      if (!modal) {
+        console.error("Admin login modal element was not found.");
+        return;
+      }
+      if (form) form.reset();
+      modal.style.display = "flex";
+      modal.style.visibility = "visible";
+      modal.style.zIndex = "99999";
+      modal.classList.add("active");
     }
 
     function closeAdminLoginModal() {
