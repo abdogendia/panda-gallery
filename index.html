@@ -1838,7 +1838,7 @@ zVuUN/wD4Xi/8RWJP20j0i0jsx7NW5X/C8X/iKEJ6cPYZZj+Wi+kV/o17lf8AC8X/AIij+Wi+kV/o17l
         </a>
       </div>
       <div class="nav-actions">
-        <button class="admin-login-btn" id="navAdminBtn" onclick="handleAdminNavClick()">
+        <button class="admin-login-btn" id="navAdminBtn" type="button">
           <span id="navAdminBtnText">🔒 تسجيل دخول الإدارة</span>
         </button>
 
@@ -1876,7 +1876,7 @@ zVuUN/wD4Xi/8RWJP20j0i0jsx7NW5X/C8X/iKEJ6cPYZZj+Wi+kV/o17lf8AC8X/AIij+Wi+kV/o17l
     <div class="catalog-layout">
       <div class="catalog-content">
         <div class="controls-bar">
-          <button type="button" class="cat-drawer-trigger-pill" onclick="openCategoryDrawer()">
+          <button type="button" class="cat-drawer-trigger-pill" id="categoryDrawerTrigger">
             <span class="mini-dashes">
               <span></span>
               <span></span>
@@ -1981,7 +1981,7 @@ zVuUN/wD4Xi/8RWJP20j0i0jsx7NW5X/C8X/iKEJ6cPYZZj+Wi+kV/o17lf8AC8X/AIij+Wi+kV/o17l
         <div class="modal-title">🔐 تسجيل دخول المدير (Admin)</div>
         <button class="drawer-close" onclick="closeAdminLoginModal()">✕</button>
       </div>
-      <form id="adminLoginForm" onsubmit="handleAdminLogin(event)">
+      <form id="adminLoginForm">
         <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
           أدخل كلمة مرور الإدارة للتحكم في إضافة وتعديل المنتجات والأقسام.
         </p>
@@ -2214,9 +2214,9 @@ zVuUN/wD4Xi/8RWJP20j0i0jsx7NW5X/C8X/iKEJ6cPYZZj+Wi+kV/o17lf8AC8X/AIij+Wi+kV/o17l
   </div>
 
   <!-- Floating Direct Contact Button -->
-  <button class="floating-wa" onclick="openDirectOrderModal()" title="تواصل مع باندا جاليري">
+  <a class="floating-wa" href="https://wa.me/201146308806" target="_blank" rel="noopener noreferrer" aria-label="تواصل مع باندا جاليري على واتساب" title="تواصل مع باندا جاليري">
     💬
-  </button>
+  </a>
 
   <!-- Toast Message -->
   <div class="toast" id="toastMessage">
@@ -4513,7 +4513,55 @@ faXJEBMoSUSY2x15VY3GjXTdodJu0EZhtYikhHh3x0FdQY2PSs+jsacqPO+18drqnanS7ONuK4SQLKuP
     window.handleAdminLogin = handleAdminLogin;
     window.openDirectOrderModal = openDirectOrderModal;
     window.openOrderModalWithText = openOrderModalWithText;
-    window.addEventListener("DOMContentLoaded", init);
+    // Critical controls use explicit listeners so they still work if inline handlers
+    // are restricted by the hosting platform's Content-Security-Policy.
+    function bootPandaGallery() {
+      if (window.__pandaGalleryBooted) return;
+      window.__pandaGalleryBooted = true;
+
+      const adminButton = document.getElementById("navAdminBtn");
+      if (adminButton) {
+        adminButton.addEventListener("click", function (event) {
+          event.preventDefault();
+          try { handleAdminNavClick(); }
+          catch (error) { console.error("Admin panel could not be opened:", error); }
+        });
+      }
+
+      const loginForm = document.getElementById("adminLoginForm");
+      if (loginForm) {
+        loginForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          try { handleAdminLogin(event); }
+          catch (error) {
+            console.error("Admin login failed:", error);
+            showCustomAlert("خطأ في الدخول", "حدث خطأ أثناء تسجيل الدخول. يرجى تحديث الصفحة والمحاولة مرة أخرى.", "🔒");
+          }
+        });
+      }
+
+      const categoryTrigger = document.getElementById("categoryDrawerTrigger");
+      if (categoryTrigger) {
+        categoryTrigger.addEventListener("click", function (event) {
+          event.preventDefault();
+          try { openCategoryDrawer(); }
+          catch (error) { console.error("Category drawer could not be opened:", error); }
+        });
+      }
+
+      try { init(); }
+      catch (error) {
+        console.error("Panda Gallery startup failed:", error);
+        const grid = document.getElementById("productGrid");
+        if (grid) grid.innerHTML = '<p style="padding:24px;text-align:center">تعذر تحميل المنتجات. يرجى تحديث الصفحة أو التواصل مع المتجر.</p>';
+      }
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", bootPandaGallery, { once: true });
+    } else {
+      bootPandaGallery();
+    }
   </script>
 </body>
 </html>
