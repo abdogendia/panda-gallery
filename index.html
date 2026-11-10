@@ -83,29 +83,48 @@
       font-weight: 800;
     }
 
-    /* Admin indicator bar (shown only to admin) */
+    /* Top Admin Indicator Bar */
     .admin-indicator-bar {
       display: none;
-      background: #27140e;
+      background: linear-gradient(180deg, #27140e 0%, #361d15 100%);
       color: #fcebd2;
-      padding: 10px 20px;
+      padding: 12px 20px;
       font-size: 13px;
       font-weight: 700;
       align-items: center;
       justify-content: space-between;
+      gap: 14px;
       border-bottom: 2px solid var(--accent);
     }
     .admin-indicator-bar.active {
       display: flex;
+    }
+    .admin-bar-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .admin-bar-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #fff;
     }
     .admin-pill {
       background: var(--accent);
       color: #27140e;
       font-size: 11px;
       font-weight: 900;
-      padding: 3px 10px;
+      padding: 2px 10px;
       border-radius: 999px;
-      margin-left: 6px;
+    }
+    .admin-bar-subtitle {
+      font-size: 12px;
+      color: #ebdcc9;
+      opacity: 0.9;
     }
     .admin-bar-actions {
       display: flex;
@@ -113,35 +132,54 @@
       gap: 8px;
       flex-wrap: wrap;
     }
-    .btn-admin-link {
-      background: rgba(255,255,255,0.12);
+    .btn-admin-link,
+    .btn-admin-logout {
+      background: rgba(255, 255, 255, 0.1);
       color: #fff;
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 4px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 7px 13px;
       border-radius: var(--radius-sm);
       font-size: 12px;
       cursor: pointer;
       font-weight: 700;
       transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-align: center;
     }
     .btn-admin-link:hover {
       background: var(--accent);
       color: var(--primary);
       border-color: var(--accent);
     }
+    .btn-admin-link.btn-cloud {
+      background: #10b981;
+      color: #fff;
+      border-color: #059669;
+    }
+    .btn-admin-link.btn-cloud:hover {
+      background: #059669;
+    }
+    .btn-admin-link.btn-publish {
+      background: var(--accent);
+      color: var(--primary);
+      border-color: var(--accent);
+      font-weight: 800;
+    }
+    .btn-admin-link.btn-publish:hover {
+      background: var(--accent-dark);
+      color: #fff;
+    }
     .btn-admin-logout {
-      background: rgba(239,68,68,0.25);
+      background: rgba(239, 68, 68, 0.2);
       color: #fca5a5;
-      border: 1px solid rgba(239,68,68,0.4);
-      padding: 4px 12px;
-      border-radius: var(--radius-sm);
-      font-size: 12px;
-      cursor: pointer;
-      font-weight: 700;
-      transition: all 0.2s ease;
+      border: 1px solid rgba(239, 68, 68, 0.4);
     }
     .btn-admin-logout:hover {
-      background: rgba(239,68,68,0.45);
+      background: rgba(239, 68, 68, 0.45);
+      color: #fff;
     }
 
     /* Header & Navigation */
@@ -1681,21 +1719,157 @@
       color: var(--accent);
     }
   
+    /* Catalog Admin Card */
     .catalog-admin-bar {
       display: none;
-      background: #eef2ff;
-      border: 1px solid #c7d2fe;
+      background: linear-gradient(135deg, #fffcf7 0%, #fef5e7 100%);
+      border: 1.5px solid var(--border);
+      border-right: 4px solid var(--accent);
       border-radius: var(--radius-md);
-      padding: 14px 18px;
+      padding: 16px 18px;
       margin-bottom: 24px;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 14px;
       box-shadow: var(--shadow-sm);
     }
     .catalog-admin-bar.active {
       display: flex;
+    }
+    .catalog-admin-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .catalog-admin-icon {
+      font-size: 22px;
+      background: var(--accent-soft);
+      border: 1px solid var(--border);
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .catalog-admin-header strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .catalog-admin-header p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .admin-bar-btns {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-sm-admin,
+    .btn-sm-cat {
+      background: var(--surface);
+      color: var(--primary);
+      border: 1.5px solid var(--border);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-sm-admin:hover,
+    .btn-sm-cat:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .btn-sm-admin.btn-cloud {
+      background: #10b981;
+      color: #fff;
+      border-color: #059669;
+    }
+    .btn-sm-admin.btn-cloud:hover {
+      background: #059669;
+    }
+    .btn-sm-admin.btn-publish {
+      background: var(--accent);
+      color: var(--primary);
+      border-color: var(--accent-dark);
+    }
+    .btn-sm-admin.btn-publish:hover {
+      background: var(--accent-dark);
+      color: #fff;
+    }
+    .btn-sm-cat.btn-backup {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .btn-sm-cat.btn-backup:hover {
+      background: var(--primary-light);
+    }
+
+    /* Vertical / Portrait Mobile Mode Layout for Admin Bars */
+    @media (max-width: 640px) {
+      .admin-indicator-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 14px 12px;
+        gap: 12px;
+      }
+      .admin-bar-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+      }
+      .admin-bar-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+      }
+      .admin-bar-actions button {
+        width: 100%;
+        padding: 9px 10px;
+        font-size: 12px;
+      }
+      .catalog-admin-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 14px;
+        gap: 12px;
+      }
+      .catalog-admin-header {
+        text-align: right;
+      }
+      .admin-bar-btns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+      }
+      .admin-bar-btns button {
+        width: 100%;
+        padding: 9px 10px;
+        font-size: 12px;
+      }
+      .full-span {
+        grid-column: 1 / -1;
+      }
     }
 
   
@@ -1929,19 +2103,21 @@
 
   <!-- Admin Indicator Bar (Visible when admin is logged in) -->
   <div class="admin-indicator-bar" id="adminIndicatorBar">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <span>👑 وضع المدير نشط</span>
-      <span class="admin-pill">Admin Mode</span>
-      <span style="font-size: 12px; opacity: 0.8; margin-right: 10px;">يمكنك الآن إضافة أو تعديل المنتجات والأقسام مباشرة</span>
+    <div class="admin-bar-header">
+      <div class="admin-bar-title">
+        <span>👑 وضع المدير نشط</span>
+        <span class="admin-pill">Admin Mode</span>
+      </div>
+      <span class="admin-bar-subtitle">يمكنك الآن إضافة أو تعديل المنتجات والأقسام مباشرة</span>
     </div>
     <div class="admin-bar-actions">
       <button class="btn-admin-link" onclick="openProductModal()">➕ إضافة منتج</button>
       <button class="btn-admin-link" onclick="openCategoryModal()">🏷️ إدارة الأقسام</button>
-      <button class="btn-admin-link" style="background:#10b981; color:#fff; border-color:#059669;" onclick="openCloudSyncModal()">☁️ إعداد المزامنة السحابية (تحديث تلقائي)</button>
-      <button class="btn-admin-link" style="background: var(--accent); color: var(--primary); border-color: var(--accent);" onclick="publishCatalogToHtml()">🚀 حفظ ونشر للجميع (تحميل index.html)</button>
-      <button class="btn-admin-link" onclick="openBackupModal()">📦 نقل البيانات (تصدير/استيراد)</button>
-      <button class="btn-admin-link" onclick="openAdminSettingsModal()">🔑 تغيير كلمة المرور</button>
-      <button class="btn-admin-logout" onclick="adminLogout()">خروج ✕</button>
+      <button class="btn-admin-link btn-cloud full-span" onclick="openCloudSyncModal()">☁️ إعداد المزامنة السحابية (تحديث تلقائي)</button>
+      <button class="btn-admin-link btn-publish full-span" onclick="publishCatalogToHtml()">🚀 حفظ ونشر للجميع (تحميل index.html)</button>
+      <button class="btn-admin-link" onclick="openBackupModal()">📦 نقل البيانات</button>
+      <button class="btn-admin-link" onclick="openAdminSettingsModal()">🔑 كلمة المرور</button>
+      <button class="btn-admin-logout full-span" onclick="adminLogout()">خروج من وضع الإدارة ✕</button>
     </div>
   </div>
 
@@ -1991,13 +2167,19 @@
 
     <!-- Admin Toolbar in Catalog (Visible ONLY to Admin) -->
     <div class="catalog-admin-bar" id="catalogAdminBar">
-      <span>⚙️ لوحة تحكم الإدارة: لديك الصلاحية الكاملة لإضافة منتجات جديدة أو إدارة أقسام الكتالوج</span>
+      <div class="catalog-admin-header">
+        <span class="catalog-admin-icon">⚙️</span>
+        <div>
+          <strong>لوحة تحكم الإدارة</strong>
+          <p>لديك الصلاحية الكاملة لإضافة منتجات جديدة أو إدارة أقسام الكتالوج</p>
+        </div>
+      </div>
       <div class="admin-bar-btns">
         <button class="btn-sm-admin" onclick="openProductModal()">➕ إضافة منتج جديد</button>
         <button class="btn-sm-cat" onclick="openCategoryModal()">🏷️ إدارة الأقسام</button>
-        <button class="btn-sm-admin" style="background:#10b981; color:#fff;" onclick="openCloudSyncModal()">☁️ المزامنة السحابية الفورية (JSONBin / npoint)</button>
-        <button class="btn-sm-admin" style="background: var(--accent); color: var(--primary);" onclick="publishCatalogToHtml()">🚀 حفظ ونشر التعديلات بملف index.html</button>
-        <button class="btn-sm-cat" style="background: var(--primary);" onclick="openBackupModal()">📦 تصدير / استيراد البيانات</button>
+        <button class="btn-sm-admin btn-cloud full-span" onclick="openCloudSyncModal()">☁️ المزامنة السحابية الفورية (JSONBin / npoint)</button>
+        <button class="btn-sm-admin btn-publish full-span" onclick="publishCatalogToHtml()">🚀 حفظ ونشر التعديلات بملف index.html</button>
+        <button class="btn-sm-cat btn-backup full-span" onclick="openBackupModal()">📦 تصدير / استيراد البيانات</button>
       </div>
     </div>
 
