@@ -11,5 +11,5 @@ not_found_handling = "single-page-application"
 [vars]
 GITHUB_OWNER = "abdogendia"
 GITHUB_REPO = "panda-gallery"
-GITHUB_BRANCH = "main"
+GITHUB_BRANCH = "github-catalog-sync"
 CATALOG_PATH = "panda-bin.json"
