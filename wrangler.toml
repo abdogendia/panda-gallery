@@ -1,0 +1,15 @@
+name = "panda-gallery"
+main = "src/worker.js"
+compatibility_date = "2026-11-11"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+not_found_handling = "single-page-application"
+
+[vars]
+GITHUB_OWNER = "abdogendia"
+GITHUB_REPO = "panda-gallery"
+GITHUB_BRANCH = "main"
+CATALOG_PATH = "panda-bin.json"
