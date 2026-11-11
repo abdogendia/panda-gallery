@@ -1,0 +1,428 @@
+{
+  "categories": [
+    {
+      "id": "all",
+      "name": "الكل 🌸"
+    },
+    {
+      "id": "cat_1794080279169",
+      "name": "أدوات مكتبية"
+    },
+    {
+      "id": "cat_1794080281522",
+      "name": "مجات"
+    },
+    {
+      "id": "cat_1794080294511",
+      "name": "Stickers & Posters"
+    },
+    {
+      "id": "cat_1794080305590",
+      "name": "سلاسل استانلس"
+    },
+    {
+      "id": "cat_1794080309670",
+      "name": "خواتم استانلس"
+    },
+    {
+      "id": "cat_1794080313278",
+      "name": "سلاسل معدن"
+    },
+    {
+      "id": "cat_1794080323930",
+      "name": "ميداليات ودبابيس شنطة"
+    },
+    {
+      "id": "cat_1794080326717",
+      "name": "شرابات"
+    },
+    {
+      "id": "cat_1794268592978",
+      "name": "أخرى"
+    },
+    {
+      "id": "cat_1794326000216",
+      "name": "أدوات منزلية"
+    },
+    {
+      "id": "cat_1794326010692",
+      "name": "شنط ومحافظ حريمي"
+    }
+  ],
+  "products": [
+    {
+      "id": 1794327754860,
+      "title": "مج قهوة بالطبق",
+      "category": "cat_1794080281522",
+      "price": 130,
+      "badge": "",
+      "stock": 2,
+      "colors": [
+        {
+          "name": "مج ورد صغير",
+          "hex": "#db9c9c",
+          "stock": 1
+        },
+        {
+          "name": "مج ورد كبير",
+          "hex": "#8b5a2b",
+          "stock": 1
+        }
+      ],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794327695/panda-gallery/products/ewhzoi3xertwzanm4o8b.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794327698/panda-gallery/products/g6bp9pveomnjsksipqkm.jpg"
+      ],
+      "desc": "مج قهوة بورسلين بالطبق"
+    },
+    {
+      "id": 1794327658228,
+      "title": "مج بإيد ملونة",
+      "category": "cat_1794080281522",
+      "price": 120,
+      "badge": "",
+      "stock": 3,
+      "colors": [
+        {
+          "name": "مج Believe in yourself",
+          "hex": "#e68383",
+          "stock": 2
+        },
+        {
+          "name": "مج Full of love",
+          "hex": "#82b2ff",
+          "stock": 1
+        }
+      ],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794327485/panda-gallery/products/vpf80muxpiqyn6nmdkf6.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794327489/panda-gallery/products/zqpe6eavzmksxl5j1tyy.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794327492/panda-gallery/products/qrrqdoqgslsjjvsgla8p.jpg"
+      ],
+      "desc": "مج خزف أبيض محفور بجمل رقيقة وإيد ملونة حجم كبير"
+    },
+    {
+      "id": 1794326386491,
+      "title": "مج قلوب",
+      "category": "cat_1794080281522",
+      "price": 100,
+      "badge": "",
+      "stock": 2,
+      "colors": [],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794326352/panda-gallery/products/jzliflewiqavtehap3wc.jpg"
+      ],
+      "desc": "مج خزف برسمة قلوب"
+    },
+    {
+      "id": 1794326227529,
+      "title": "مج  بيد بنية",
+      "category": "cat_1794080281522",
+      "price": 100,
+      "badge": "",
+      "stock": 3,
+      "colors": [
+        {
+          "name": "مج Coffee",
+          "hex": "#f0cea5",
+          "stock": 2
+        },
+        {
+          "name": "مج Keep going",
+          "hex": "#8b5a2b",
+          "stock": 1
+        }
+      ],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794326093/panda-gallery/products/sg5wqbg22cwptcnr9kxv.jpg"
+      ],
+      "desc": "مج خزف بإيد بني"
+    },
+    {
+      "id": 1794325788645,
+      "title": "دفتر استيتش",
+      "category": "cat_1794080279169",
+      "price": 50,
+      "badge": "",
+      "stock": 4,
+      "colors": [
+        {
+          "name": "دفتر 1",
+          "hex": "#0000ff",
+          "stock": 1
+        },
+        {
+          "name": "دفتر 2",
+          "hex": "#0000ff",
+          "stock": 1
+        },
+        {
+          "name": "دفتر 3",
+          "hex": "#0000ff",
+          "stock": 1
+        },
+        {
+          "name": "دفتر 4",
+          "hex": "#0000ff",
+          "stock": 1
+        }
+      ],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794325453/panda-gallery/products/sakt9ggwlb3ieecs8ne5.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794325455/panda-gallery/products/sadrmbelb8ruwarpbzek.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794325458/panda-gallery/products/mx7pm1rzawdocgrw4xs1.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794325460/panda-gallery/products/w5ofj5bgxnup4s1kckdq.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794325462/panda-gallery/products/davfvewlrpdhixnk46sc.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794325781/panda-gallery/products/g7rreyhtzev058sa6kx3.jpg"
+      ],
+      "desc": "دفتر استيتش مستورد ، 60 ورقة مسطرة \nمقاس الدفتر 14.5*21"
+    },
+    {
+      "id": 1794268680727,
+      "title": "زجاجة مياه سوداء",
+      "category": "cat_1794326000216",
+      "price": 85,
+      "badge": "",
+      "stock": 3,
+      "colors": [],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794268635/panda-gallery/products/xpwvors3a4taepgaycb3.jpg"
+      ],
+      "desc": "زجاجة مياه اكريلك مط باللون الأسود ..\nالحجم : 500 مل"
+    },
+    {
+      "id": 1794268476252,
+      "title": "هايلايتر باستل",
+      "category": "cat_1794080279169",
+      "price": 10,
+      "badge": "",
+      "stock": 10,
+      "colors": [
+        {
+          "name": "بينك",
+          "hex": "#ff00ff",
+          "stock": 2
+        },
+        {
+          "name": "اصفر",
+          "hex": "#ffff00",
+          "stock": 2
+        },
+        {
+          "name": "موڤ",
+          "hex": "#8374d4",
+          "stock": 3
+        },
+        {
+          "name": "اخضر",
+          "hex": "#5bc294",
+          "stock": 3
+        }
+      ],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794268345/panda-gallery/products/xkdxb0w1am9d83jnjnw0.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794268348/panda-gallery/products/sh6zcrbu3gkwcpw1mjnx.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794268350/panda-gallery/products/s1jlvqkyvnp2lqafg98z.jpg"
+      ],
+      "desc": "قلم هايلايتر باستل بألوان هادئة متاح ب ٤ الوان مختلفة"
+    },
+    {
+      "id": 1794268292521,
+      "title": "قلم كوكتيل",
+      "category": "cat_1794080279169",
+      "price": 10,
+      "badge": "",
+      "stock": 8,
+      "colors": [],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794268251/panda-gallery/products/bt39c5xspte4zj3olg3d.jpg"
+      ],
+      "desc": "قلم چل بيكتب كذا لون ف نفس القلم ، فسفوري وبينك وموڤ واورانج"
+    },
+    {
+      "id": 1794158046825,
+      "title": "دباسة",
+      "category": "cat_1794080279169",
+      "price": 50,
+      "badge": "",
+      "stock": 2,
+      "colors": [],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255889/panda-gallery/products/ivdkjg12ai0wwposusva.jpg"
+      ],
+      "desc": "دباسة ومعاها علبة دبابيس"
+    },
+    {
+      "id": 1794157995136,
+      "title": "قلم رصاص",
+      "category": "cat_1794080279169",
+      "price": 10,
+      "badge": "",
+      "stock": 18,
+      "colors": [
+        {
+          "name": "استيتش ازرق",
+          "hex": "#0000ff",
+          "stock": 9
+        },
+        {
+          "name": "Little bony pink",
+          "hex": "#cc85a1",
+          "stock": 9
+        }
+      ],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255889/panda-gallery/products/nuu8g1tcnsy0g03aduol.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255890/panda-gallery/products/a1blrntet6ufwe1vpgki.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255892/panda-gallery/products/kngdjgafweuffplbsqsw.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255893/panda-gallery/products/xvurkgijvfxyaj5oyaca.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255894/panda-gallery/products/l1jvrk0ykgaebj8durkh.jpg"
+      ],
+      "desc": "قلم رصاص برسمة little bony و stitch"
+    },
+    {
+      "id": 1794157829217,
+      "title": "قلم كيتي حراري",
+      "category": "cat_1794080279169",
+      "price": 20,
+      "badge": "",
+      "stock": 10,
+      "colors": [],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255895/panda-gallery/products/ckbqhwhtprf6mhuakfos.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255895/panda-gallery/products/p3wfvxgglzruwpcgyxax.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255896/panda-gallery/products/vbtrugzscusakk1azbj8.jpg"
+      ],
+      "desc": "قلم چل ازرق حراري مزود بأستيكة  ، بيكتب ازرق عادي وبيتمسح بالأستيكة اللي معاه زي القلم الرصاص"
+    },
+    {
+      "id": 1794157656400,
+      "title": "Thermal bottle - مج حراري",
+      "category": "cat_1794080281522",
+      "price": 220,
+      "badge": "",
+      "stock": 5,
+      "colors": [
+        {
+          "name": "بيج مشجر قلوب",
+          "hex": "#8b5a2b",
+          "stock": 1
+        },
+        {
+          "name": "بيج مشجر كرز",
+          "hex": "#8b5a2b",
+          "stock": 2
+        },
+        {
+          "name": "بيج مشجر فيونكة وورد",
+          "hex": "#8b5a2b",
+          "stock": 1
+        },
+        {
+          "name": "اسود مشجر ورد",
+          "hex": "#000000",
+          "stock": 1
+        }
+      ],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255897/panda-gallery/products/i3tzeo5klrfm4sieavxk.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255898/panda-gallery/products/xalocqnjoupnszg9uber.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255899/panda-gallery/products/h1ctgi9zt06vk5pihor5.jpg"
+      ],
+      "desc": "مج حراري استانلس بيحفظ الحرارة أقل حاجة ١٢ ساعة وبتوصل ل ٢٤ ساعة ..\n500 ml"
+    },
+    {
+      "id": 1794157469341,
+      "title": "Thermal bottle - مج حراري",
+      "category": "cat_1794080281522",
+      "price": 180,
+      "badge": "",
+      "stock": 3,
+      "colors": [
+        {
+          "name": "أسود",
+          "hex": "#000000",
+          "stock": 3
+        }
+      ],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255899/panda-gallery/products/gbhxjuh7xjkvi7hlowrx.jpg"
+      ],
+      "desc": "مج حراري استانلس تحفظ الحرارة أقل حاجة ١٢ ساعة وبنوصل ل ٢٤ ساعة..\n500ml\nمتاحة باللون الأسود"
+    },
+    {
+      "id": 1794157358218,
+      "title": "مج ديجيتال حراري",
+      "category": "cat_1794080281522",
+      "price": 130,
+      "badge": "",
+      "stock": 4,
+      "colors": [
+        {
+          "name": "اسود",
+          "hex": "#000000",
+          "stock": 1
+        },
+        {
+          "name": "تركواز",
+          "hex": "#3ea897",
+          "stock": 2
+        },
+        {
+          "name": "احمر",
+          "hex": "#ff0000",
+          "stock": 1
+        }
+      ],
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255900/panda-gallery/products/fcsquyejmcgzewqljqt2.jpg",
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255901/panda-gallery/products/awd3qnmzp4ohwprqmpd5.jpg"
+      ],
+      "desc": "مج ديجيتال حراري بيظهر درجة حرارة المشروب ، بيحفظ الحرارة أقل حاجة ١٠ ساعات ..\n500ml\nمتاح بالألوان ..\nاسود ، احمر ، تركواز"
+    },
+    {
+      "id": 1794080563385,
+      "title": "مج خريفي",
+      "category": "cat_1794080281522",
+      "price": 110,
+      "badge": "",
+      "stock": 4,
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255902/panda-gallery/products/pni6hrecxaa8um1r7vse.jpg"
+      ],
+      "desc": "مج هادئ بثيم الخريف ، متاح بلونين مختلفين بني وبرجاندي",
+      "colors": [
+        {
+          "name": "بني",
+          "hex": "#6b4423",
+          "stock": 2
+        },
+        {
+          "name": "برجاندي",
+          "hex": "#800020",
+          "stock": 2
+        }
+      ]
+    },
+    {
+      "id": 1794080469286,
+      "title": "مج كافيه",
+      "category": "cat_1794080281522",
+      "price": 90,
+      "badge": "",
+      "stock": 1,
+      "img": [
+        "https://res.cloudinary.com/mepgowl9/image/upload/v1794255903/panda-gallery/products/recvt2tvw3xtrkd4nhli.jpg"
+      ],
+      "desc": "مج للمشروبات الدافئة بألوان الكافيه الهادئة",
+      "colors": [
+        {
+          "name": "كافيه",
+          "hex": "#c3a68f",
+          "stock": 1
+        }
+      ]
+    }
+  ],
+  "updatedAt": 1794422068806
+}
