@@ -13,3 +13,10 @@ GITHUB_OWNER = "abdogendia"
 GITHUB_REPO = "panda-gallery"
 GITHUB_BRANCH = "github-catalog-sync"
 CATALOG_PATH = "panda-bin.json"
+
+
+[previews.vars]
+GITHUB_OWNER = "abdogendia"
+GITHUB_REPO = "panda-gallery"
+GITHUB_BRANCH = "github-catalog-sync"
+CATALOG_PATH = "panda-bin.json"
