@@ -1556,13 +1556,17 @@
       right: 20px;
       background: var(--whatsapp-green);
       color: #fff;
-      width: 56px;
+      min-width: 56px;
       height: 56px;
-      border-radius: 50%;
+      padding: 0 18px;
+      border-radius: 30px;
+      gap: 9px;
+      text-decoration: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 30px;
+      font-size: 25px;
+      font-weight: 900;
       box-shadow: 0 4px 18px rgba(37,211,102,0.4);
       z-index: 40;
       cursor: pointer;
@@ -1570,8 +1574,9 @@
       transition: transform 0.2s ease;
     }
     .floating-wa:hover {
-      transform: scale(1.1);
+      transform: scale(1.04);
     }
+    .floating-wa-label { font-size: 14px; font-weight: 900; white-space: nowrap; }
 
     /* Delivery Info Section */
     .info-section {
@@ -1907,7 +1912,7 @@
       border: 1px solid #ef4444;
     }
 
-  
+
     /* Product Detail Modal Styles */
     .detail-gallery-wrap {
       position: relative;
@@ -2303,9 +2308,9 @@
       <div class="delivery-select-wrap">
         <label class="delivery-label">طريقة الاستلام / الشحن المفضلة:</label>
         <select class="delivery-select" id="deliverySelect" onchange="updateCartTotal()">
-          <option value="محطة مترو">🚇 تسليم محطة مترو (25 ج.م)</option>
-          <option value="توصيل القاهرة والجيزة">🏠 توصيل منزلي القاهرة والجيزة (50 ج.م)</option>
-          <option value="شحن محافظات">📦 شحن محافظات مصر (65 ج.م)</option>
+          <option value="محطة مترو">🚇 تسليم مترو من المنيب إلي السادات ( 40 ج )</option>
+          <option value="توصيل القاهرة والجيزة">🏠 توصيل منزلي القاهره و الجيزه ( 65 ج )</option>
+          <option value="شحن محافظات">📦 شحن محافظات مصر ( يبدأ من 65 ج )</option>
         </select>
       </div>
       <div class="cart-summary">
@@ -2609,10 +2614,10 @@
     </div>
   </div>
 
-  <!-- Floating Direct Contact Button -->
-  <button class="floating-wa" onclick="openDirectOrderModal()" title="تواصل مع باندا جاليري">
-    💬
-  </button>
+  <!-- Floating WhatsApp Contact Button -->
+  <a class="floating-wa" href="https://wa.me/201146308806?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%20Panda%20Gallery%20%F0%9F%90%BC" target="_blank" rel="noopener" aria-label="تواصل واتساب مع Panda Gallery" title="تواصل واتساب">
+    <span aria-hidden="true">☏</span><span class="floating-wa-label">تواصل واتساب</span>
+  </a>
 
   <!-- Toast Message -->
   <div class="toast" id="toastMessage">
@@ -3992,6 +3997,7 @@
           item.colors = finalColors;
           item.img = finalImages;
           item.desc = desc;
+          delete item.stickerSheet;
           if (finalColors.length > 0) {
             const firstAvail = finalColors.find(c => c.stock > 0) || finalColors[0];
             selectedProductColors[item.id] = firstAvail.name;
@@ -4008,7 +4014,7 @@
           stock: computedStock,
           colors: finalColors,
           img: finalImages,
-          desc
+          desc,
         };
         if (finalColors.length > 0) {
           const firstAvail = finalColors.find(c => c.stock > 0) || finalColors[0];
@@ -4114,6 +4120,7 @@
       });
     }
 
+
     // Cart Management
     function addToCart(id) {
       const prod = products.find(p => p.id === id);
@@ -4161,8 +4168,8 @@
       showToast(`تمت إضافة "${selectedColor ? prod.title + ' - ' + selectedColor : prod.title}" إلى السلة 🛍️`);
     }
 
-    function changeQty(id, delta) {
-      const item = cart.find(i => i.id === id);
+    function changeQty(id, delta, cartKey) {
+      const item = cart.find(i => i.cartKey === cartKey) || cart.find(i => i.id === id);
       if (!item) return;
       const prod = products.find(p => p.id === id);
 
@@ -4174,13 +4181,13 @@
 
       item.qty = newQty;
       if (item.qty <= 0) {
-        cart = cart.filter(i => i.id !== id);
+        cart = cart.filter(i => i !== item);
       }
       updateCartUI();
     }
 
-    function removeItem(id) {
-      cart = cart.filter(i => i.id !== id);
+    function removeItem(id, cartKey) {
+      cart = cart.filter(i => cartKey ? i.cartKey !== cartKey : i.id !== id);
       updateCartUI();
     }
 
@@ -4213,10 +4220,10 @@
               <div class="cart-item-name">${item.title}</div>
               <div class="cart-item-price">${item.price} ج.م</div>
               <div class="cart-qty-ctrl">
-                <button class="qty-btn" onclick="changeQty(${item.id}, -1)">-</button>
+                <button class="qty-btn" onclick="changeQty(${item.id}, -1, '${item.cartKey}')">-</button>
                 <span class="qty-val">${item.qty}</span>
-                <button class="qty-btn" onclick="changeQty(${item.id}, 1)">+</button>
-                <button class="remove-btn" onclick="removeItem(${item.id})">حذف</button>
+                <button class="qty-btn" onclick="changeQty(${item.id}, 1, '${item.cartKey}')">+</button>
+                <button class="remove-btn" onclick="removeItem(${item.id}, '${item.cartKey}')">حذف</button>
               </div>
             </div>
           </div>
@@ -4229,8 +4236,8 @@
     function getDeliveryCost() {
       const select = document.getElementById("deliverySelect");
       if (!select) return 25;
-      if (select.value === "محطة مترو") return 25;
-      if (select.value === "توصيل القاهرة والجيزة") return 50;
+      if (select.value === "محطة مترو") return 40;
+      if (select.value === "توصيل القاهرة والجيزة") return 65;
       if (select.value === "شحن محافظات") return 65;
       return 25;
     }
