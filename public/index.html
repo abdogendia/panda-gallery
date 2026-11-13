@@ -3362,7 +3362,7 @@
     let currentCategory = 'all';
     let searchQuery = '';
     const PRODUCTS_PER_PAGE = 20;
-    let currentPage = 1;
+    let currentPage = Math.max(1, parseInt(localStorage.getItem('panda_current_page') || '1', 10) || 1);
     let currentGridColumns = localStorage.getItem('panda_grid_cols') || 'default';
     const phone = "201146308806";
     let activeUploadedImages = []; // Stores Base64 images for current modal session
@@ -3403,6 +3403,20 @@
     function closeCustomDialog() {
       document.getElementById("dialogOverlay").classList.remove("active");
       document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
+    }
+
+    // Product IDs are generated from timestamps, so descending ID keeps newest products first.
+    function sortProductsNewestFirst() {
+      products.sort((a, b) => {
+        const aId = Number(a && a.id);
+        const bId = Number(b && b.id);
+        if (Number.isFinite(aId) && Number.isFinite(bId)) return bId - aId;
+        return 0;
+      });
+    }
+
+    function saveCurrentPage() {
+      try { localStorage.setItem('panda_current_page', String(currentPage)); } catch (e) { console.warn('Could not save current page:', e); }
     }
 
     function loadData() {
@@ -3470,6 +3484,7 @@
         }
       });
 
+      sortProductsNewestFirst();
       isAdmin = sessionStorage.getItem("panda_admin_logged") === "true";
     }
 
@@ -3496,6 +3511,13 @@
 
     function init() {
       loadData();
+      const savedPage = parseInt(localStorage.getItem('panda_current_page') || '1', 10);
+      currentPage = Number.isFinite(savedPage) && savedPage > 0 ? savedPage : 1;
+      if (localStorage.getItem('panda_catalog_entered') === 'true') {
+        const welcome = document.getElementById('welcomeScreen');
+        if (welcome) welcome.style.display = 'none';
+        document.body.classList.remove('welcome-active');
+      }
       applyCustomCover(localStorage.getItem('panda_custom_cover'));
       renderCategoryTabs();
       renderProducts();
@@ -3856,6 +3878,7 @@
 
       if (currentPage > totalPages) currentPage = totalPages;
       if (currentPage < 1) currentPage = 1;
+      saveCurrentPage();
 
       if (totalItems === 0) {
         grid.innerHTML = `
@@ -3969,6 +3992,7 @@
 
     function goToPage(page) {
       currentPage = page;
+      saveCurrentPage();
       renderProducts();
       const catalogEl = document.getElementById("catalog");
       if (catalogEl) {
@@ -4017,6 +4041,7 @@
     function filterCategory(catId, el) {
       currentCategory = catId;
       currentPage = 1;
+      saveCurrentPage();
       document.querySelectorAll('.category-tab').forEach(b => b.classList.remove('active'));
       if (el) el.classList.add('active');
       const activeLabel = document.getElementById("activeCategoryName");
@@ -4030,6 +4055,7 @@
     function handleSearch() {
       searchQuery = document.getElementById("searchInput").value.trim();
       currentPage = 1;
+      saveCurrentPage();
       renderProducts();
     }
     
@@ -4303,6 +4329,8 @@
           selectedProductColors[newId] = firstAvail.name;
         }
         products.unshift(newProduct);
+        currentPage = 1;
+        saveCurrentPage();
       }
 
       const success = saveProducts();
@@ -5138,6 +5166,7 @@
           const previousCategoryCount = record.categories.length;
           categories = mergeById([defaultCategories, localCategories, record.categories]);
           products = mergeById([defaultProducts, localProducts, record.products]);
+          sortProductsNewestFirst();
 
           const recoveredProducts = Math.max(0, products.length - previousProductCount);
           const recoveredCategories = Math.max(0, categories.length - previousCategoryCount);
@@ -5169,7 +5198,7 @@
               mergedCategories: categories.length
             });
             if (typeof showToast === "function") {
-              showToast(`تم الحفاظ على بيانات الكتالوج: ${products.length} منتج و ${categories.length} قسم. لم يتم حذف البيانات المحلية. 🛡️`);
+
             }
           }
         }
@@ -5234,6 +5263,7 @@
     function enterCatalog() {
       const screen = document.getElementById('welcomeScreen');
       if (!screen) return;
+      try { localStorage.setItem('panda_catalog_entered', 'true'); } catch (e) { console.warn('Could not save catalog entry state:', e); }
       screen.classList.add('is-hidden');
       document.body.classList.remove('welcome-active');
       window.setTimeout(() => { screen.style.display = 'none'; }, 480);
