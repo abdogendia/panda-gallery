@@ -1967,6 +1967,50 @@
     }
 
 
+    /* Full-screen product image zoom */
+    .image-zoom-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(12, 10, 9, .96);
+      padding: 58px 12px 54px;
+      overflow: hidden;
+    }
+    .image-zoom-overlay.active { display: flex; }
+    .image-zoom-overlay img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      transform: scale(1);
+      transform-origin: center center;
+      touch-action: pinch-zoom;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .image-zoom-close {
+      position: absolute; top: 12px; right: 14px; z-index: 2;
+      width: 42px; height: 42px; border: 0; border-radius: 50%;
+      background: rgba(255,255,255,.18); color: #fff; font-size: 25px;
+    }
+    .image-zoom-controls {
+      position: absolute; top: 14px; left: 14px; z-index: 2;
+      display: flex; gap: 8px;
+    }
+    .image-zoom-controls button {
+      width: 42px; height: 42px; border: 0; border-radius: 50%;
+      background: rgba(255,255,255,.18); color: #fff; font-size: 25px;
+    }
+    .image-zoom-hint {
+      position: absolute; bottom: 14px; left: 0; right: 0;
+      color: #fff; text-align: center; font-size: 12px; opacity: .8;
+      pointer-events: none;
+    }
+
     /* Product Detail Modal Styles */
     .detail-gallery-wrap {
       position: relative;
@@ -2596,6 +2640,18 @@
         <!-- Dynamic Content -->
       </div>
     </div>
+  </div>
+
+  <!-- Full-screen product image viewer -->
+  <div id="productImageZoom" class="image-zoom-overlay" onclick="if(event.target.id==='productImageZoom') closeProductImageZoom()" aria-hidden="true">
+    <button type="button" class="image-zoom-close" onclick="closeProductImageZoom()" aria-label="Close image">✕</button>
+    <div class="image-zoom-controls">
+      <button type="button" onclick="changeProductImageZoom(1)" aria-label="Zoom in">＋</button>
+      <button type="button" onclick="resetProductImageZoom()" aria-label="Reset zoom">↺</button>
+      <button type="button" onclick="changeProductImageZoom(-1)" aria-label="Zoom out">−</button>
+    </div>
+    <img id="productImageZoomTarget" alt="صورة المنتج المكبرة" />
+    <div class="image-zoom-hint">استخدم إصبعين للتكبير أو أزرار التكبير</div>
   </div>
 
   <!-- Category Manager Modal -->
@@ -3359,6 +3415,7 @@
     let categories = [];
     let products = [];
     let cart = [];
+    const CART_STORAGE_KEY = 'panda_cart_v1';
     let currentCategory = 'all';
     let searchQuery = '';
     const PRODUCTS_PER_PAGE = 20;
@@ -3509,8 +3566,36 @@
       }
     }
 
+    function loadCart() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
+        cart = Array.isArray(saved) ? saved.filter(item =>
+          item && item.id !== undefined && item.id !== null &&
+          Number.isFinite(Number(item.qty)) && Number(item.qty) > 0 &&
+          Number.isFinite(Number(item.price))
+        ).map(item => ({
+          ...item,
+          qty: Math.max(1, Math.floor(Number(item.qty))),
+          price: Number(item.price),
+          cartKey: item.cartKey || String(item.id)
+        })) : [];
+      } catch (err) {
+        console.warn('Could not restore saved basket:', err);
+        cart = [];
+      }
+    }
+
+    function saveCart() {
+      try {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      } catch (err) {
+        console.warn('Could not save basket:', err);
+      }
+    }
+
     function init() {
       loadData();
+      loadCart();
       const savedPage = parseInt(localStorage.getItem('panda_current_page') || '1', 10);
       currentPage = Number.isFinite(savedPage) && savedPage > 0 ? savedPage : 1;
       if (localStorage.getItem('panda_catalog_entered') === 'true') {
@@ -4513,7 +4598,7 @@
       const prod = products.find(p => p.id === id);
 
       const newQty = item.qty + delta;
-      if (newQty > prod.stock) {
+      if (prod && newQty > prod.stock) {
         showCustomAlert("تنبيه المخزون", `عذراً، لا يمكن إضافة المزيد. المتاح في المخزون (${prod.stock} قطعة فقط).`, "⚠️");
         return;
       }
@@ -4531,6 +4616,7 @@
     }
 
     function updateCartUI() {
+      saveCart();
       const totalCount = cart.reduce((sum, item) => sum + item.qty, 0);
       document.getElementById("cartCount").innerText = totalCount;
 
@@ -4761,10 +4847,10 @@
             <button class="slider-arrow right" onclick="scrollDetailSlider(${prod.id}, 1)" aria-label="Next image">❯</button>
             <button class="slider-arrow left" onclick="scrollDetailSlider(${prod.id}, -1)" aria-label="Previous image">❮</button>
             <div class="detail-slider" id="detailSlider-${prod.id}" onscroll="updateDetailThumb(${prod.id})">
-              ${images.map(src => `<img src="${src}" class="detail-slide" />`).join('')}
+              ${images.map(src => `<img src="${src}" class="detail-slide" onclick="openProductImageZoom(this.src)" style="cursor:zoom-in;" alt="${prod.title}" />`).join('')}
             </div>
           ` : `
-            <img src="${images[0]}" style="width:100%; height:100%; object-fit:contain; background:#fff;" />
+            <img src="${images[0]}" onclick="openProductImageZoom(this.src)" style="width:100%; height:100%; object-fit:contain; background:#fff; cursor:zoom-in;" alt="${prod.title}" />
           `}
           ${prod.badge ? `<span class="product-badge">${prod.badge}</span>` : ''}
           <span class="stock-indicator ${prod.stock > 0 ? 'in-stock' : 'out-stock'}" style="bottom: 12px; right: 12px;">
@@ -4805,7 +4891,44 @@
       document.getElementById("productDetailModal").classList.add("active");
     }
 
+    let productImageZoomLevel = 1;
+
+    function openProductImageZoom(src) {
+      if (!src) return;
+      const overlay = document.getElementById('productImageZoom');
+      const image = document.getElementById('productImageZoomTarget');
+      productImageZoomLevel = 1;
+      image.src = src;
+      image.style.transform = 'scale(1)';
+      overlay.classList.add('active');
+      overlay.setAttribute('aria-hidden', 'false');
+      document.documentElement.classList.add('modal-open');
+      document.body.classList.add('modal-open');
+    }
+
+    function changeProductImageZoom(direction) {
+      productImageZoomLevel = Math.min(4, Math.max(1, productImageZoomLevel + direction * 0.5));
+      document.getElementById('productImageZoomTarget').style.transform = `scale(${productImageZoomLevel})`;
+    }
+
+    function resetProductImageZoom() {
+      productImageZoomLevel = 1;
+      document.getElementById('productImageZoomTarget').style.transform = 'scale(1)';
+    }
+
+    function closeProductImageZoom() {
+      const overlay = document.getElementById('productImageZoom');
+      overlay.classList.remove('active');
+      overlay.setAttribute('aria-hidden', 'true');
+      document.getElementById('productImageZoomTarget').src = '';
+      if (!document.getElementById('productDetailModal').classList.contains('active')) {
+        document.documentElement.classList.remove('modal-open');
+        document.body.classList.remove('modal-open');
+      }
+    }
+
     function closeProductDetailModal() {
+      closeProductImageZoom();
       document.getElementById("productDetailModal").classList.remove("active");
       document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
     }
