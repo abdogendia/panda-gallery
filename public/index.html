@@ -2407,6 +2407,28 @@
             />
           </div>
 
+          <div class="catalog-filter-menu" style="position:relative; display:flex; justify-content:flex-start; width:100%; margin:10px 0;">
+            <button type="button" id="filterMenuToggle" class="btn-view-toggle" onclick="toggleFilterMenu()" aria-expanded="false" aria-controls="catalogFilterPanel">
+              <span aria-hidden="true">☷</span> فلترة المنتجات <span aria-hidden="true">⌄</span>
+            </button>
+            <div id="catalogFilterPanel" hidden style="position:absolute; z-index:30; top:calc(100% + 8px); inset-inline-start:0; width:min(320px, 92vw); padding:16px; background:var(--card-bg, #fff); border:1px solid var(--border-color, #e5ddd2); border-radius:14px; box-shadow:0 8px 28px rgba(0,0,0,.14);">
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <div>
+                  <label for="priceSortSelect" style="display:block; font-weight:700; color:var(--text-main); margin-bottom:7px;">ترتيب السعر</label>
+                  <select id="priceSortSelect" class="form-select" style="width:100%;" onchange="handleCatalogFilters()">
+                    <option value="default">الترتيب الافتراضي</option>
+                    <option value="low-high">من الأقل للأعلى</option>
+                    <option value="high-low">من الأعلى للأقل</option>
+                  </select>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                  <span style="font-weight:700; color:var(--text-main);">العروض</span>
+                  <button type="button" id="offersOnlyBtn" class="btn-view-toggle" onclick="toggleOffersOnly()" aria-pressed="false">🏷️ العروض فقط</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- View Layout Toggle: Normal vs 2 Products per Line -->
           <div class="view-toggle-wrap">
             <button type="button" class="btn-view-toggle active" id="btnViewDefault" onclick="setProductColumns('default')" title="عرض شبكي افتراضي">
@@ -2575,6 +2597,12 @@
         <div class="form-group">
           <label class="form-label">السعر (بالجنيه المصري) *</label>
           <input type="number" id="prodPrice" class="form-input" placeholder="مثال: 95" min="1" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">السعر بعد الخصم (اختياري - بالجنيه المصري)</label>
+          <input type="number" id="prodDiscountPrice" class="form-input" placeholder="اتركه فارغاً إذا لم يوجد خصم" min="0" step="0.01" />
+          <small style="color:var(--text-muted);">أدخل السعر الجديد فقط، وسيظهر السعر الأصلي مشطوباً بجانبه.</small>
         </div>
 
         <div class="form-group">
@@ -3418,6 +3446,41 @@
     const CART_STORAGE_KEY = 'panda_cart_v1';
     let currentCategory = 'all';
     let searchQuery = '';
+    let offersOnly = false;
+
+    function getProductPrice(product) {
+      const original = Number(product && product.price) || 0;
+      const discounted = Number(product && product.discountPrice);
+      return Number.isFinite(discounted) && discounted > 0 && discounted < original ? discounted : original;
+    }
+
+    function hasProductDiscount(product) {
+      return getProductPrice(product) < (Number(product && product.price) || 0);
+    }
+
+    function toggleFilterMenu() {
+      const panel = document.getElementById('catalogFilterPanel');
+      const toggle = document.getElementById('filterMenuToggle');
+      if (!panel || !toggle) return;
+      panel.hidden = !panel.hidden;
+      toggle.setAttribute('aria-expanded', String(!panel.hidden));
+    }
+
+    function handleCatalogFilters() {
+      currentPage = 1;
+      saveCurrentPage();
+      renderProducts();
+    }
+
+    function toggleOffersOnly() {
+      offersOnly = !offersOnly;
+      const button = document.getElementById('offersOnlyBtn');
+      if (button) {
+        button.classList.toggle('active', offersOnly);
+        button.setAttribute('aria-pressed', String(offersOnly));
+      }
+      handleCatalogFilters();
+    }
     const PRODUCTS_PER_PAGE = 20;
     let currentPage = Math.max(1, parseInt(localStorage.getItem('panda_current_page') || '1', 10) || 1);
     let currentGridColumns = localStorage.getItem('panda_grid_cols') || 'default';
@@ -3952,11 +4015,15 @@
 
       applyGridColumnsUI();
 
+      const priceSort = document.getElementById('priceSortSelect')?.value || 'default';
       const filtered = products.filter(p => {
         const matchesCat = (currentCategory === 'all' || p.category === currentCategory);
         const matchesSearch = (p.title.includes(searchQuery) || (p.desc && p.desc.includes(searchQuery)));
-        return matchesCat && matchesSearch;
+        const matchesOffer = !offersOnly || hasProductDiscount(p);
+        return matchesCat && matchesSearch && matchesOffer;
       });
+      if (priceSort === 'low-high') filtered.sort((a, b) => getProductPrice(a) - getProductPrice(b));
+      if (priceSort === 'high-low') filtered.sort((a, b) => getProductPrice(b) - getProductPrice(a));
 
       const totalItems = filtered.length;
       const totalPages = Math.ceil(totalItems / PRODUCTS_PER_PAGE) || 1;
@@ -4024,7 +4091,7 @@
               </div>
               <div class="product-price-box">
                 <div class="product-price">
-                  ${p.price} <span>ج.م</span>
+                  ${hasProductDiscount(p) ? `<span style="text-decoration:line-through;color:#888;font-size:.82em;margin-inline-end:8px;">${p.price} ج.م</span><strong style="color:#d62828;">${getProductPrice(p)} ج.م</strong>` : `${p.price} <span>ج.م</span>`}
                 </div>
               </div>
               <div class="product-actions-row">
@@ -4181,7 +4248,7 @@
 أود طلب هذا المنتج مباشرة:
 
 🛍️ المنتج: ${prod.title}${chosenColorText}
-💰 السعر: ${prod.price} ج.م
+💰 السعر: ${getProductPrice(prod)} ج.م
 
 الاسم:
 العنوان / المحطة للتسليم:
@@ -4323,6 +4390,7 @@
         document.getElementById("prodName").value = prod.title;
         document.getElementById("prodCategory").value = prod.category;
         document.getElementById("prodPrice").value = prod.price;
+        document.getElementById("prodDiscountPrice").value = prod.discountPrice || '';
         document.getElementById("prodBadge").value = prod.badge || '';
         document.getElementById("prodStock").value = (typeof prod.stock === 'number') ? prod.stock : 10;
         document.getElementById("prodDesc").value = prod.desc || '';
@@ -4336,6 +4404,7 @@
         title.innerText = "➕ إضافة منتج جديد للكتالوج";
         document.getElementById("productForm").reset();
         document.getElementById("editProductId").value = '';
+        document.getElementById("prodDiscountPrice").value = '';
         activeModalColors = [];
         renderModalThumbnails();
         renderAdminColorList();
@@ -4365,6 +4434,12 @@
       const title = document.getElementById("prodName").value.trim();
       const category = document.getElementById("prodCategory").value;
       const price = parseFloat(document.getElementById("prodPrice").value);
+      const discountRaw = document.getElementById("prodDiscountPrice").value.trim();
+      const discountPrice = discountRaw === '' ? null : parseFloat(discountRaw);
+      if (discountRaw !== '' && (!Number.isFinite(discountPrice) || discountPrice <= 0 || discountPrice >= price)) {
+        showCustomAlert("سعر الخصم غير صحيح", "يجب أن يكون السعر بعد الخصم أكبر من صفر وأقل من السعر الأصلي.", "⚠️");
+        return;
+      }
       const badge = document.getElementById("prodBadge").value.trim();
       const stock = parseInt(document.getElementById("prodStock").value) || 0;
       const desc = document.getElementById("prodDesc").value.trim();
@@ -4385,6 +4460,8 @@
           item.title = title;
           item.category = category;
           item.price = price;
+          if (discountPrice === null) delete item.discountPrice;
+          else item.discountPrice = discountPrice;
           item.badge = badge;
           item.stock = computedStock;
           item.colors = finalColors;
@@ -4403,6 +4480,7 @@
           title,
           category,
           price,
+          ...(discountPrice !== null ? { discountPrice } : {}),
           badge,
           stock: computedStock,
           colors: finalColors,
@@ -4582,6 +4660,7 @@
       } else {
         cart.push({
           ...prod,
+          price: getProductPrice(prod),
           cartKey,
           selectedColor,
           title: selectedColor ? `${prod.title} (${selectedColor})` : prod.title,
@@ -4868,7 +4947,7 @@
           <span class="product-cat">${getCatName(prod.category)}</span>
           <div class="detail-info-row">
             <h3 style="font-size: 18px; font-weight: 800; color: var(--primary);">${prod.title}</h3>
-            <div class="detail-price">${prod.price} <span>ج.م</span></div>
+            <div class="detail-price">${hasProductDiscount(prod) ? `<span style="text-decoration:line-through;color:#888;font-size:.8em;margin-inline-end:8px;">${prod.price} ج.م</span><strong style="color:#d62828;">${getProductPrice(prod)} ج.م</strong>` : `${prod.price} <span>ج.م</span>`}</div>
           </div>
           ${renderColorChipsHTML(prod, true)}
           <div class="detail-desc-text">
