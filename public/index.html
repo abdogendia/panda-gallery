@@ -4801,28 +4801,11 @@
     function proceedToCheckoutModal() {
       if (cart.length === 0) return;
 
-      // Decrement stock for each item in cart (including color stock)
-      cart.forEach(cartItem => {
-        const prod = products.find(p => p.id === cartItem.id);
-        if (prod) {
-          if (cartItem.selectedColor && Array.isArray(prod.colors) && prod.colors.length > 0) {
-            const cObj = prod.colors.find(c => c.name === cartItem.selectedColor);
-            if (cObj) {
-              cObj.stock = Math.max(0, cObj.stock - cartItem.qty);
-            }
-            prod.stock = prod.colors.reduce((s, c) => s + (parseInt(c.stock) || 0), 0);
-          } else {
-            prod.stock = Math.max(0, prod.stock - cartItem.qty);
-          }
-        }
-      });
-      saveProducts();
-      renderProducts();
-
-      closeCart();
+      // Opening the order preview is NOT a completed order.
+      // Keep basket contents and stock unchanged until the store confirms the order.
+      saveCart();
       const msg = generateOrderText();
-      cart = []; // clear cart after order
-      updateCartUI();
+      closeCart();
       openOrderModalWithText(msg);
     }
 
