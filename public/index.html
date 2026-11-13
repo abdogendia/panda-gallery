@@ -5118,8 +5118,29 @@
         const record = data.record ? data.record : data;
 
         if (record && Array.isArray(record.categories) && Array.isArray(record.products)) {
-          categories = record.categories;
-          products = record.products;
+          // Protect the catalog: merge cloud data with local and built-in data.
+          // Existing IDs are updated from the cloud, while local-only items are retained.
+          const localCategories = Array.isArray(categories) ? categories : [];
+          const localProducts = Array.isArray(products) ? products : [];
+          const mergeById = (sources) => {
+            const merged = new Map();
+            sources.forEach(list => {
+              (Array.isArray(list) ? list : []).forEach(item => {
+                if (!item || item.id === undefined || item.id === null) return;
+                const key = String(item.id);
+                merged.set(key, { ...(merged.get(key) || {}), ...item });
+              });
+            });
+            return Array.from(merged.values());
+          };
+
+          const previousProductCount = record.products.length;
+          const previousCategoryCount = record.categories.length;
+          categories = mergeById([defaultCategories, localCategories, record.categories]);
+          products = mergeById([defaultProducts, localProducts, record.products]);
+
+          const recoveredProducts = Math.max(0, products.length - previousProductCount);
+          const recoveredCategories = Math.max(0, categories.length - previousCategoryCount);
 
           // Normalize images and color stocks
           products.forEach(p => {
@@ -5139,6 +5160,18 @@
           localStorage.setItem("panda_products", JSON.stringify(products));
           renderCategoryTabs();
           renderProducts();
+
+          if (recoveredProducts > 0 || recoveredCategories > 0) {
+            console.warn("Panda Gallery catalog protection restored local-only entries.", {
+              cloudProducts: previousProductCount,
+              mergedProducts: products.length,
+              cloudCategories: previousCategoryCount,
+              mergedCategories: categories.length
+            });
+            if (typeof showToast === "function") {
+              showToast(`تم الحفاظ على بيانات الكتالوج: ${products.length} منتج و ${categories.length} قسم. لم يتم حذف البيانات المحلية. 🛡️`);
+            }
+          }
         }
       } catch (err) {
         console.warn("Cloud sync fetch skipped or offline:", err);
