@@ -1971,15 +1971,25 @@
     .image-zoom-overlay {
       position: fixed;
       inset: 0;
-      z-index: 10000;
+      z-index: 2147483000;
       display: none;
       align-items: center;
       justify-content: center;
-      background: rgba(12, 10, 9, .96);
+      background: #0c0a09;
       padding: 58px 12px 54px;
       overflow: hidden;
+      isolation: isolate;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
     .image-zoom-overlay.active { display: flex; }
+    /* Avoid Android GPU black flashes while opening/zooming nested modals. */
+    @media (max-width: 768px) {
+      .modal-overlay { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+      .image-zoom-overlay { transition: none !important; }
+      .image-zoom-overlay img { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+    }
     .image-zoom-overlay img {
       max-width: 100%;
       max-height: 100%;
@@ -3680,15 +3690,18 @@
       const indicator = document.getElementById("adminIndicatorBar");
       const catalogBar = document.getElementById("catalogAdminBar");
       const navBtnText = document.getElementById("navAdminBtnText");
+      const navAdminBtn = document.getElementById("navAdminBtn");
 
       if (isAdmin) {
         indicator.classList.add("active");
         catalogBar.classList.add("active");
-        navBtnText.innerHTML = '<span class="admin-text-full">👑 لوحة الإدارة</span><span class="admin-text-short">👑 الإدارة</span>';
+        // The login/admin navigation button is unnecessary while the admin toolbar is visible.
+        if (navAdminBtn) navAdminBtn.style.display = "none";
       } else {
         indicator.classList.remove("active");
         catalogBar.classList.remove("active");
-        navBtnText.innerHTML = '<span class="admin-text-full">🔒 تسجيل دخول الإدارة</span><span class="admin-text-short">🔒 الإدارة</span>';
+        if (navAdminBtn) navAdminBtn.style.display = "";
+        if (navBtnText) navBtnText.innerHTML = '<span class="admin-text-full">🔒 تسجيل دخول الإدارة</span><span class="admin-text-short">🔒 الإدارة</span>';
       }
 
       document.querySelectorAll(".product-admin-actions").forEach(el => {
@@ -3802,6 +3815,8 @@
         if (toastEl) toastEl.classList.remove("show");
         const navText = clone.querySelector("#navAdminBtnText");
         if (navText) navText.innerHTML = '<span class="admin-text-full">🔒 تسجيل دخول الإدارة</span><span class="admin-text-short">🔒 الإدارة</span>';
+        const navAdminBtn = clone.querySelector("#navAdminBtn");
+        if (navAdminBtn) navAdminBtn.style.display = "";
         const gridEl = clone.querySelector("#productGrid");
         if (gridEl) gridEl.innerHTML = "";
         const pageEl = clone.querySelector("#paginationContainer");
@@ -4960,12 +4975,29 @@
       const overlay = document.getElementById('productImageZoom');
       const image = document.getElementById('productImageZoomTarget');
       productImageZoomLevel = 1;
-      image.src = src;
       image.style.transform = 'scale(1)';
-      overlay.classList.add('active');
-      overlay.setAttribute('aria-hidden', 'false');
-      document.documentElement.classList.add('modal-open');
-      document.body.classList.add('modal-open');
+      // Decode the image before revealing the dark viewer to prevent a blank/black flash.
+      const showViewer = () => {
+        image.src = src;
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.documentElement.classList.add('modal-open');
+        document.body.classList.add('modal-open');
+      };
+      const preloader = new Image();
+      preloader.onload = () => {
+        if (typeof preloader.decode === 'function') {
+          preloader.decode().catch(() => {}).finally(showViewer);
+        } else {
+          showViewer();
+        }
+      };
+      preloader.onerror = showViewer;
+      preloader.src = src;
+      if (preloader.complete && preloader.naturalWidth > 0) {
+        if (typeof preloader.decode === 'function') preloader.decode().catch(() => {}).finally(showViewer);
+        else showViewer();
+      }
     }
 
     function changeProductImageZoom(direction) {
