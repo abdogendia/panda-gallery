@@ -743,6 +743,17 @@
       border: 1px solid var(--border);
     }
 
+    .category-tab-meta { display: inline-flex; align-items: center; gap: 9px; }
+    .category-submenu { display: none; flex-direction: column; gap: 9px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .category-submenu.active { display: flex; }
+    .category-tabs.submenu-open { display:none; }
+    .category-submenu-item { font-size:16px; font-weight:700; padding:13px 15px; min-height:48px; }
+    .category-submenu-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+    .category-submenu-title { font-size:16px; font-weight:800; color:var(--text-main); }
+    .category-submenu-back { border:1px solid var(--border); background:var(--bg); color:var(--text-main); border-radius:9px; padding:8px 12px; font-size:14px; font-weight:700; cursor:pointer; }
+    .category-submenu-item { font-size:15px; font-weight:700; padding:12px 15px; min-height:46px; border-radius:11px; }
+    .category-show-all { border:1px solid var(--border); background:var(--accent-soft); color:var(--primary); border-radius:10px; padding:11px 14px; font-size:15px; font-weight:800; cursor:pointer; text-align:center; }
+
     /* Catalog Layout (Full Width) */
     .catalog-layout {
       display: block;
@@ -2417,7 +2428,8 @@
             />
           </div>
 
-          <div class="catalog-filter-menu" style="position:relative; display:flex; justify-content:flex-start; width:100%; margin:10px 0;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;margin:10px 0;">
+          <div class="catalog-filter-menu" style="position:relative; display:flex; justify-content:flex-start; margin:0;">
             <button type="button" id="filterMenuToggle" class="btn-view-toggle" onclick="toggleFilterMenu()" aria-expanded="false" aria-controls="catalogFilterPanel">
               <span aria-hidden="true">☷</span> فلترة المنتجات <span aria-hidden="true">⌄</span>
             </button>
@@ -2431,12 +2443,10 @@
                     <option value="high-low">من الأعلى للأقل</option>
                   </select>
                 </div>
-                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                  <span style="font-weight:700; color:var(--text-main);">العروض</span>
-                  <button type="button" id="offersOnlyBtn" class="btn-view-toggle" onclick="toggleOffersOnly()" aria-pressed="false">🏷️ العروض فقط</button>
-                </div>
               </div>
             </div>
+          </div>
+          <button type="button" id="offersOnlyBtn" class="btn-view-toggle" onclick="toggleOffersOnly()" aria-pressed="false">🏷️ العروض المتاحة</button>
           </div>
 
           <!-- View Layout Toggle: Normal vs 2 Products per Line -->
@@ -2502,6 +2512,7 @@
     </div>
     <div class="cat-drawer-body">
       <div class="category-tabs" id="categoryTabs"></div>
+      <div class="category-submenu" id="categorySubmenu"></div>
     </div>
   </aside>
 
@@ -2703,11 +2714,20 @@
       <div class="cat-manage-list" id="catManageList"></div>
 
       <div style="border-top: 1px solid var(--border); padding-top: 14px; margin-top: 10px;">
-        <label class="form-label">إضافة قسم جديد:</label>
-        <div style="display: flex; gap: 8px;">
+        <label class="form-label" id="categoryFormTitle">إضافة قسم جديد:</label>
+        <input type="hidden" id="editingCategoryId" value="" />
+        <div style="display:flex;flex-direction:column;gap:9px;">
           <input type="text" id="newCatName" class="form-input" placeholder="اسم القسم (مثال: نوت بوك 📓)" />
-          <button class="btn btn-primary" style="padding: 0 16px; border-radius: var(--radius-sm);" onclick="addNewCategory()">إضافة</button>
+          <label class="form-label" for="newCatParent">القسم الرئيسي (اختياري):</label>
+          <select id="newCatParent" class="form-select">
+            <option value="">بدون قسم رئيسي — قسم رئيسي جديد</option>
+          </select>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" id="saveCategoryBtn" style="padding:10px 16px;border-radius:var(--radius-sm);flex:1;" onclick="addNewCategory()">إضافة القسم</button>
+            <button type="button" class="btn btn-outline" id="cancelCategoryEditBtn" style="display:none;" onclick="resetCategoryForm()">إلغاء</button>
+          </div>
         </div>
+        <small style="display:block;color:var(--text-muted);margin-top:8px;">يمكنك إنشاء أقسام فرعية متعددة لأي قسم رئيسي، أو ترك الاختيار فارغاً لإنشاء قسم رئيسي.</small>
       </div>
     </div>
   </div>
@@ -3976,24 +3996,120 @@
       }
     }
 
-    // Render Category Tabs inside Drawer
+    // Category helpers: each main category may have any number of optional subcategories.
+    function getCategoryChildren(parentId) {
+      return categories.filter(c => c.id !== 'all' && String(c.parentId || '') === String(parentId || ''));
+    }
+
+    function getCategoryDescendantIds(categoryId) {
+      const ids = [String(categoryId)];
+      const queue = [String(categoryId)];
+      while (queue.length) {
+        const parent = queue.shift();
+        getCategoryChildren(parent).forEach(child => {
+          const id = String(child.id);
+          if (!ids.includes(id)) { ids.push(id); queue.push(id); }
+        });
+      }
+      return ids;
+    }
+
+    function productMatchesCategory(product, categoryId) {
+      if (categoryId === 'all') return true;
+      return getCategoryDescendantIds(categoryId).includes(String(product.category));
+    }
+
+    let activeSubcategoryParentId = null;
+    const expandedSubcategoryLists = new Set();
+
+    function openSubcategoryMenu(categoryId) {
+      const parent = categories.find(c => String(c.id) === String(categoryId));
+      const children = getCategoryChildren(categoryId);
+      if (!parent || !children.length) { filterCategory(String(categoryId)); return; }
+      activeSubcategoryParentId = String(categoryId);
+      renderCategoryTabs();
+    }
+
+    function closeSubcategoryMenu() {
+      activeSubcategoryParentId = null;
+      renderCategoryTabs();
+    }
+
+    function toggleShowAllSubcategories(categoryId) {
+      const key = String(categoryId);
+      if (expandedSubcategoryLists.has(key)) expandedSubcategoryLists.delete(key);
+      else expandedSubcategoryLists.add(key);
+      renderCategoryTabs();
+    }
+
     function renderCategoryTabs() {
-      const tabs = document.getElementById("categoryTabs");
-      if (!tabs) return;
+      const tabs = document.getElementById('categoryTabs');
+      const submenu = document.getElementById('categorySubmenu');
+      if (!tabs || !submenu) return;
+      const roots = categories.filter(c => c.id !== 'all' && !c.parentId);
+      const all = categories.find(c => c.id === 'all');
+      const rootHtml = [];
+      if (all) rootHtml.push(`<button type="button" class="category-tab ${currentCategory === 'all' ? 'active' : ''}" data-category-filter="all"><span>${all.name}</span><span class="cat-badge">${products.length}</span></button>`);
+      roots.forEach(cat => {
+        const id = String(cat.id);
+        const children = getCategoryChildren(id);
+        const count = products.filter(p => productMatchesCategory(p, id)).length;
+        // Keep the parent main category highlighted when one of its subcategories is selected.
+        const active = getCategoryDescendantIds(id).includes(String(currentCategory)) ? 'active' : '';
+        // In RTL, the right-facing chevron indicates entering the nested menu.
+        const arrow = children.length ? '<span class="category-enter-arrow" aria-hidden="true">›</span>' : '';
+        rootHtml.push(`<button type="button" class="category-tab ${active}" data-category-id="${id}" data-has-children="${children.length ? '1' : '0'}"><span>${cat.name}</span><span class="category-tab-meta"><span class="cat-badge">${count}</span>${arrow}</span></button>`);
+      });
+      categories.filter(c => c.id !== 'all' && c.parentId && !categories.some(parent => String(parent.id) === String(c.parentId)))
+        .forEach(cat => rootHtml.push(`<button type="button" class="category-tab" data-category-filter="${String(cat.id)}"><span>${cat.name}</span></button>`));
+      tabs.innerHTML = rootHtml.join('');
+      tabs.classList.toggle('submenu-open', !!activeSubcategoryParentId);
 
-      tabs.innerHTML = categories.map(cat => {
-        const count = cat.id === 'all' ? products.length : products.filter(p => p.category === cat.id).length;
-        return `
-          <button class="category-tab ${currentCategory === cat.id ? 'active' : ''}" onclick="filterCategory('${cat.id}', this)">
-            <span>${cat.name}</span>
-            <span class="cat-badge">${count}</span>
-          </button>
-        `;
-      }).join('');
+      if (activeSubcategoryParentId) {
+        const parent = categories.find(c => String(c.id) === activeSubcategoryParentId);
+        const children = getCategoryChildren(activeSubcategoryParentId);
+        if (!parent || !children.length) {
+          activeSubcategoryParentId = null;
+          submenu.innerHTML = '';
+          submenu.classList.remove('active');
+          tabs.classList.remove('submenu-open');
+        } else {
+          const showAll = expandedSubcategoryLists.has(activeSubcategoryParentId);
+          const visibleChildren = showAll ? children : children.slice(0, 4);
+          const items = visibleChildren.map(cat => {
+            const id = String(cat.id);
+            const count = products.filter(p => productMatchesCategory(p, id)).length;
+            return `<button type="button" class="category-tab category-submenu-item ${currentCategory === id ? 'active' : ''}" data-category-filter="${id}"><span>${cat.name}</span><span class="cat-badge">${count}</span></button>`;
+          }).join('');
+          const moreButton = children.length > 4 ? `<button type="button" class="category-show-all" data-toggle-all="${activeSubcategoryParentId}">${showAll ? 'عرض أقل' : 'عرض الكل'}</button>` : '';
+          submenu.innerHTML = `<div class="category-submenu-header"><div class="category-submenu-title">${parent.name}</div><button type="button" class="category-submenu-back" data-close-submenu>رجوع</button></div>${items}${moreButton}`;
+          submenu.classList.add('active');
+        }
+      } else {
+        submenu.innerHTML = '';
+        submenu.classList.remove('active');
+      }
 
-      const activeLabel = document.getElementById("activeCategoryName");
+      // Bind click handlers after rendering; avoids fragile inline onclick strings.
+      tabs.querySelectorAll('[data-category-id]').forEach(button => button.addEventListener('click', () => {
+        const id = button.getAttribute('data-category-id');
+        if (button.getAttribute('data-has-children') === '1') openSubcategoryMenu(id);
+        else filterCategory(id, button);
+      }));
+      tabs.querySelectorAll('[data-category-filter]').forEach(button => button.addEventListener('click', () => filterCategory(button.getAttribute('data-category-filter'), button)));
+      submenu.querySelectorAll('[data-category-filter]').forEach(button => button.addEventListener('click', () => filterCategory(button.getAttribute('data-category-filter'), button)));
+      const back = submenu.querySelector('[data-close-submenu]');
+      if (back) back.addEventListener('click', closeSubcategoryMenu);
+      const showAllButton = submenu.querySelector('[data-toggle-all]');
+      if (showAllButton) showAllButton.addEventListener('click', () => toggleShowAllSubcategories(showAllButton.getAttribute('data-toggle-all')));
+
+      const activeLabel = document.getElementById('activeCategoryName');
       if (activeLabel) {
-        activeLabel.innerText = getCatName(currentCategory);
+        const selected = categories.find(c => String(c.id) === String(currentCategory));
+        const parent = selected && selected.parentId
+          ? categories.find(c => String(c.id) === String(selected.parentId))
+          : null;
+        activeLabel.innerText = parent ? `${parent.name} / ${selected.name}` : getCatName(currentCategory);
       }
     }
 
@@ -4032,7 +4148,7 @@
 
       const priceSort = document.getElementById('priceSortSelect')?.value || 'default';
       const filtered = products.filter(p => {
-        const matchesCat = (currentCategory === 'all' || p.category === currentCategory);
+        const matchesCat = productMatchesCategory(p, currentCategory);
         const matchesSearch = (p.title.includes(searchQuery) || (p.desc && p.desc.includes(searchQuery)));
         const matchesOffer = !offersOnly || hasProductDiscount(p);
         return matchesCat && matchesSearch && matchesOffer;
@@ -4192,6 +4308,8 @@
     }
 
     function openCategoryDrawer() {
+      activeSubcategoryParentId = null;
+      renderCategoryTabs();
       document.getElementById("catDrawer").classList.add("active");
       document.getElementById("catDrawerOverlay").classList.add("active");
       document.documentElement.classList.add("modal-open");
@@ -4206,6 +4324,7 @@
     }
 
     function filterCategory(catId, el) {
+      activeSubcategoryParentId = null;
       currentCategory = catId;
       currentPage = 1;
       saveCurrentPage();
@@ -4213,7 +4332,11 @@
       if (el) el.classList.add('active');
       const activeLabel = document.getElementById("activeCategoryName");
       if (activeLabel) {
-        activeLabel.innerText = getCatName(catId);
+        const selected = categories.find(c => String(c.id) === String(catId));
+        const parent = selected && selected.parentId
+          ? categories.find(c => String(c.id) === String(selected.parentId))
+          : null;
+        activeLabel.innerText = parent ? `${parent.name} / ${selected.name}` : getCatName(catId);
       }
       renderProducts();
       closeCategoryDrawer();
@@ -4550,10 +4673,8 @@
 
     // Category Manager Modal
     function openCategoryModal() {
-      if (!isAdmin) {
-        openAdminLoginModal();
-        return;
-      }
+      if (!isAdmin) { openAdminLoginModal(); return; }
+      resetCategoryForm();
       renderCategoryManagerList();
       document.getElementById("categoryModal").classList.add("active");
       document.documentElement.classList.add('modal-open'); document.body.classList.add('modal-open');
@@ -4562,78 +4683,105 @@
     function closeCategoryModal() {
       document.getElementById("categoryModal").classList.remove("active");
       document.documentElement.classList.remove('modal-open'); document.body.classList.remove('modal-open');
+      resetCategoryForm();
     }
 
-    function handleCategoryModalClick(e) {
-      if (e.target.id === "categoryModal") closeCategoryModal();
+    function handleCategoryModalClick(e) { if (e.target.id === "categoryModal") closeCategoryModal(); }
+
+    function populateCategoryParentOptions(selectedId = '', excludeId = '') {
+      const select = document.getElementById('newCatParent');
+      if (!select) return;
+      const options = ['<option value="">بدون قسم رئيسي — قسم رئيسي جديد</option>'];
+      categories.filter(c => c.id !== 'all' && String(c.id) !== String(excludeId)).forEach(c => {
+        const depth = c.parentId ? 1 : 0;
+        options.push(`<option value="${String(c.id).replace(/\"/g, '&quot;')}">${depth ? '↳ ' : ''}${c.name}</option>`);
+      });
+      select.innerHTML = options.join('');
+      select.value = selectedId || '';
+    }
+
+    function resetCategoryForm() {
+      const name = document.getElementById('newCatName');
+      const editing = document.getElementById('editingCategoryId');
+      if (name) name.value = '';
+      if (editing) editing.value = '';
+      const title = document.getElementById('categoryFormTitle');
+      const save = document.getElementById('saveCategoryBtn');
+      const cancel = document.getElementById('cancelCategoryEditBtn');
+      if (title) title.textContent = 'إضافة قسم جديد:';
+      if (save) { save.textContent = 'إضافة القسم'; save.onclick = addNewCategory; }
+      if (cancel) cancel.style.display = 'none';
+      populateCategoryParentOptions();
     }
 
     function renderCategoryManagerList() {
       const list = document.getElementById("catManageList");
-      list.innerHTML = categories.map(c => `
-        <div class="cat-item-row">
-          <span class="cat-item-name">${c.name}</span>
-          ${c.id !== 'all' ? `
-            <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
-              <button type="button" class="cat-edit-btn" onclick="editCategory('${c.id}')" title="تعديل اسم القسم">✏️ تعديل</button>
-              <button type="button" class="cat-del-btn" onclick="deleteCategory('${c.id}')" title="حذف القسم">✕ حذف</button>
-            </div>
-          ` : '<span style="font-size: 11px; color: var(--text-muted); font-weight:800;">(افتراضي)</span>'}
-        </div>
-      `).join('');
+      if (!list) return;
+      const ordered = [];
+      const visit = (parentId, depth) => getCategoryChildren(parentId).forEach(c => { ordered.push({c,depth}); visit(c.id, depth + 1); });
+      visit('', 0);
+      categories.filter(c => c.id !== 'all' && !ordered.some(x => x.c.id === c.id)).forEach(c => ordered.push({c,depth:0}));
+      list.innerHTML = ordered.map(({c,depth}) => {
+        const parent = c.parentId ? categories.find(x => String(x.id) === String(c.parentId)) : null;
+        return `<div class="cat-item-row"><span class="cat-item-name" style="padding-inline-start:${depth * 18}px;">${depth ? '↳ ' : ''}${c.name}${parent ? `<small style="display:block;color:var(--text-muted);font-size:11px;">تابع لـ: ${parent.name}</small>` : ''}</span><div style="display:flex;align-items:center;gap:8px;flex-shrink:0;"><button type="button" class="cat-edit-btn" onclick="editCategory('${c.id}')" title="تعديل القسم">✏️ تعديل</button><button type="button" class="cat-del-btn" onclick="deleteCategory('${c.id}')" title="حذف القسم">✕ حذف</button></div></div>`;
+      }).join('');
     }
 
     function editCategory(categoryId) {
       if (!isAdmin) return;
       const category = categories.find(c => String(c.id) === String(categoryId));
       if (!category || category.id === 'all') return;
+      document.getElementById('editingCategoryId').value = category.id;
+      document.getElementById('newCatName').value = category.name;
+      populateCategoryParentOptions(category.parentId || '', category.id);
+      // Prevent moving a category beneath one of its own descendants.
+      const forbidden = getCategoryDescendantIds(category.id);
+      Array.from(document.getElementById('newCatParent').options).forEach(opt => { if (forbidden.includes(String(opt.value))) opt.disabled = true; });
+      document.getElementById('categoryFormTitle').textContent = 'تعديل القسم:';
+      const save = document.getElementById('saveCategoryBtn');
+      save.textContent = 'حفظ التعديلات';
+      save.onclick = saveEditedCategory;
+      document.getElementById('cancelCategoryEditBtn').style.display = 'inline-flex';
+      document.getElementById('newCatName').focus();
+    }
 
-      const updatedName = window.prompt("اكتب اسم القسم الجديد:", category.name);
-      if (updatedName === null) return;
-      const name = updatedName.trim();
-      if (!name) {
-        showToast("اسم القسم لا يمكن أن يكون فارغاً.");
-        return;
-      }
-      const duplicate = categories.some(c => c.id !== category.id && c.name.trim().toLowerCase() === name.toLowerCase());
-      if (duplicate) {
-        showToast("هذا القسم موجود بالفعل.");
-        return;
-      }
-
+    function saveEditedCategory() {
+      if (!isAdmin) return;
+      const id = document.getElementById('editingCategoryId').value;
+      const category = categories.find(c => String(c.id) === String(id));
+      const name = document.getElementById('newCatName').value.trim();
+      const parentId = document.getElementById('newCatParent').value;
+      if (!category || !name) { showToast('يرجى إدخال اسم القسم.'); return; }
+      if (categories.some(c => String(c.id) !== String(id) && c.name.trim().toLowerCase() === name.toLowerCase())) { showToast('هذا القسم موجود بالفعل.'); return; }
+      if (parentId && getCategoryDescendantIds(id).includes(String(parentId))) { showToast('لا يمكن وضع القسم داخل أحد أقسامه الفرعية.'); return; }
       category.name = name;
-      saveCategories();
-      renderCategoryTabs();
-      renderCategoryManagerList();
-      renderProducts();
-      showToast("تم تعديل اسم القسم بنجاح ✨");
+      if (parentId) category.parentId = parentId; else delete category.parentId;
+      saveCategories(); renderCategoryTabs(); renderCategoryManagerList(); renderProducts(); resetCategoryForm();
+      showToast('تم تعديل القسم بنجاح ✨');
     }
 
     function addNewCategory() {
       if (!isAdmin) return;
-      const input = document.getElementById("newCatName");
+      const input = document.getElementById('newCatName');
       const name = input.value.trim();
-      if (!name) return;
-
-      const newId = 'cat_' + Date.now();
-      categories.push({ id: newId, name: name });
-      saveCategories();
-      renderCategoryTabs();
-      renderCategoryManagerList();
-      input.value = '';
-      showToast(`تمت إضافة قسم "${name}" بنجاح! 🏷️`);
+      const parentId = document.getElementById('newCatParent').value;
+      if (!name) { showToast('يرجى إدخال اسم القسم.'); return; }
+      if (categories.some(c => c.name.trim().toLowerCase() === name.toLowerCase())) { showToast('هذا القسم موجود بالفعل.'); return; }
+      const newCategory = { id: 'cat_' + Date.now(), name };
+      if (parentId) newCategory.parentId = parentId;
+      categories.push(newCategory);
+      saveCategories(); renderCategoryTabs(); renderCategoryManagerList(); resetCategoryForm();
+      showToast(`تمت إضافة ${parentId ? 'قسم فرعي' : 'قسم رئيسي'} "${name}" بنجاح! 🏷️`);
     }
 
     function deleteCategory(catId) {
       if (!isAdmin) return;
-      showCustomConfirm("حذف القسم", "هل أنت متأكد من حذف هذا القسم؟", () => {
-        categories = categories.filter(c => c.id !== catId);
+      showCustomConfirm('حذف القسم', 'هل أنت متأكد من حذف هذا القسم؟ إذا كان له أقسام فرعية فستتحول إلى أقسام رئيسية، وستظل المنتجات محفوظة.', () => {
+        categories = categories.filter(c => String(c.id) !== String(catId));
+        categories.forEach(c => { if (String(c.parentId || '') === String(catId)) delete c.parentId; });
         if (currentCategory === catId) currentCategory = 'all';
-        saveCategories();
-        renderCategoryTabs();
-        renderCategoryManagerList();
-        renderProducts();
-        showToast("تم حذف القسم");
+        saveCategories(); renderCategoryTabs(); renderCategoryManagerList(); renderProducts(); resetCategoryForm();
+        showToast('تم حذف القسم');
       });
     }
 
