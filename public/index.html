@@ -3997,8 +3997,22 @@
     }
 
     // Category helpers: each main category may have any number of optional subcategories.
+    // Sort English names first (A-Z), then Arabic names (أ-ي), ignoring case and numeric suffixes.
+    function compareCategoryNames(a, b) {
+      const nameA = String(a && a.name || '').trim();
+      const nameB = String(b && b.name || '').trim();
+      const isArabicA = /[\u0600-\u06FF]/.test(nameA);
+      const isArabicB = /[\u0600-\u06FF]/.test(nameB);
+      if (isArabicA !== isArabicB) return isArabicA ? 1 : -1;
+      const locale = isArabicA ? 'ar' : 'en';
+      return nameA.localeCompare(nameB, locale, { sensitivity: 'base', numeric: true });
+    }
+
     function getCategoryChildren(parentId) {
-      return categories.filter(c => c.id !== 'all' && String(c.parentId || '') === String(parentId || ''));
+      return categories
+        .filter(c => c.id !== 'all' && String(c.parentId || '') === String(parentId || ''))
+        .slice()
+        .sort(compareCategoryNames);
     }
 
     function getCategoryDescendantIds(categoryId) {
@@ -4046,7 +4060,7 @@
       const tabs = document.getElementById('categoryTabs');
       const submenu = document.getElementById('categorySubmenu');
       if (!tabs || !submenu) return;
-      const roots = categories.filter(c => c.id !== 'all' && !c.parentId);
+      const roots = categories.filter(c => c.id !== 'all' && !c.parentId).slice().sort(compareCategoryNames);
       const all = categories.find(c => c.id === 'all');
       const rootHtml = [];
       if (all) rootHtml.push(`<button type="button" class="category-tab ${currentCategory === 'all' ? 'active' : ''}" data-category-filter="all"><span>${all.name}</span><span class="cat-badge">${products.length}</span></button>`);
@@ -4060,7 +4074,7 @@
         const arrow = children.length ? '<span class="category-enter-arrow" aria-hidden="true">›</span>' : '';
         rootHtml.push(`<button type="button" class="category-tab ${active}" data-category-id="${id}" data-has-children="${children.length ? '1' : '0'}"><span>${cat.name}</span><span class="category-tab-meta"><span class="cat-badge">${count}</span>${arrow}</span></button>`);
       });
-      categories.filter(c => c.id !== 'all' && c.parentId && !categories.some(parent => String(parent.id) === String(c.parentId)))
+      categories.filter(c => c.id !== 'all' && c.parentId && !categories.some(parent => String(parent.id) === String(c.parentId))).slice().sort(compareCategoryNames)
         .forEach(cat => rootHtml.push(`<button type="button" class="category-tab" data-category-filter="${String(cat.id)}"><span>${cat.name}</span></button>`));
       tabs.innerHTML = rootHtml.join('');
       tabs.classList.toggle('submenu-open', !!activeSubcategoryParentId);
@@ -4720,7 +4734,7 @@
       const ordered = [];
       const visit = (parentId, depth) => getCategoryChildren(parentId).forEach(c => { ordered.push({c,depth}); visit(c.id, depth + 1); });
       visit('', 0);
-      categories.filter(c => c.id !== 'all' && !ordered.some(x => x.c.id === c.id)).forEach(c => ordered.push({c,depth:0}));
+      categories.filter(c => c.id !== 'all' && !ordered.some(x => x.c.id === c.id)).slice().sort(compareCategoryNames).forEach(c => ordered.push({c,depth:0}));
       list.innerHTML = ordered.map(({c,depth}) => {
         const parent = c.parentId ? categories.find(x => String(x.id) === String(c.parentId)) : null;
         return `<div class="cat-item-row"><span class="cat-item-name" style="padding-inline-start:${depth * 18}px;">${depth ? '↳ ' : ''}${c.name}${parent ? `<small style="display:block;color:var(--text-muted);font-size:11px;">تابع لـ: ${parent.name}</small>` : ''}</span><div style="display:flex;align-items:center;gap:8px;flex-shrink:0;"><button type="button" class="cat-edit-btn" onclick="editCategory('${c.id}')" title="تعديل القسم">✏️ تعديل</button><button type="button" class="cat-del-btn" onclick="deleteCategory('${c.id}')" title="حذف القسم">✕ حذف</button></div></div>`;
