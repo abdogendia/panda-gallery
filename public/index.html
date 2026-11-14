@@ -4790,12 +4790,26 @@
 
     function deleteCategory(catId) {
       if (!isAdmin) return;
-      showCustomConfirm('حذف القسم', 'هل أنت متأكد من حذف هذا القسم؟ إذا كان له أقسام فرعية فستتحول إلى أقسام رئيسية، وستظل المنتجات محفوظة.', () => {
-        categories = categories.filter(c => String(c.id) !== String(catId));
-        categories.forEach(c => { if (String(c.parentId || '') === String(catId)) delete c.parentId; });
-        if (currentCategory === catId) currentCategory = 'all';
-        saveCategories(); renderCategoryTabs(); renderCategoryManagerList(); renderProducts(); resetCategoryForm();
-        showToast('تم حذف القسم');
+      const category = categories.find(c => String(c.id) === String(catId));
+      if (!category || category.id === 'all') return;
+      const idsToDelete = new Set(getCategoryDescendantIds(catId).map(String));
+      const hasChildren = idsToDelete.size > 1;
+      const affectedProducts = products.filter(p => idsToDelete.has(String(p.category))).length;
+      const message = hasChildren
+        ? `هل أنت متأكد من حذف القسم الرئيسي "${category.name}" وجميع أقسامه الفرعية؟ المنتجات (${affectedProducts}) ستظل محفوظة وستظهر ضمن كل المنتجات.`
+        : `هل أنت متأكد من حذف القسم "${category.name}"؟ المنتجات (${affectedProducts}) ستظل محفوظة وستظهر ضمن كل المنتجات.`;
+      showCustomConfirm('حذف القسم', message, () => {
+        // Delete the selected category and its entire descendant tree. Do not promote
+        // children to root categories, which made a deleted main category appear to remain.
+        categories = categories.filter(c => !idsToDelete.has(String(c.id)));
+        products.forEach(p => { if (idsToDelete.has(String(p.category))) p.category = 'all'; });
+        if (idsToDelete.has(String(currentCategory))) currentCategory = 'all';
+        if (idsToDelete.has(String(activeSubcategoryParentId))) activeSubcategoryParentId = null;
+        idsToDelete.forEach(id => expandedSubcategoryLists.delete(id));
+        saveCategories();
+        saveProducts();
+        renderCategoryTabs(); renderCategoryManagerList(); renderProducts(); updateCartUI(); resetCategoryForm();
+        showToast('تم حذف القسم وأقسامه الفرعية بنجاح');
       });
     }
 
