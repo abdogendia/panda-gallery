@@ -3472,6 +3472,18 @@
     // State Variables
     let categories = [];
     let products = [];
+    // Tombstones prevent deleted categories from being resurrected by older cloud snapshots.
+    const DELETED_CATEGORY_IDS_KEY = 'panda_deleted_category_ids_v1';
+    let deletedCategoryIds = (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(DELETED_CATEGORY_IDS_KEY) || '[]');
+        return new Set(Array.isArray(saved) ? saved.map(String) : []);
+      } catch (e) { return new Set(); }
+    })();
+    function persistDeletedCategoryIds() {
+      try { localStorage.setItem(DELETED_CATEGORY_IDS_KEY, JSON.stringify(Array.from(deletedCategoryIds))); }
+      catch (e) { console.warn('Could not persist deleted category markers:', e); }
+    }
     let cart = [];
     const CART_STORAGE_KEY = 'panda_cart_v1';
     let currentCategory = 'all';
@@ -4090,13 +4102,14 @@
         } else {
           const showAll = expandedSubcategoryLists.has(activeSubcategoryParentId);
           const visibleChildren = showAll ? children : children.slice(0, 4);
+          const mainAllButton = `<button type="button" class="category-tab category-submenu-item category-submenu-all ${String(currentCategory) === String(activeSubcategoryParentId) ? 'active' : ''}" data-category-filter="${String(activeSubcategoryParentId)}"><span>الكل</span><span class="cat-badge">${products.filter(p => productMatchesCategory(p, activeSubcategoryParentId)).length}</span></button>`;
           const items = visibleChildren.map(cat => {
             const id = String(cat.id);
             const count = products.filter(p => productMatchesCategory(p, id)).length;
             return `<button type="button" class="category-tab category-submenu-item ${currentCategory === id ? 'active' : ''}" data-category-filter="${id}"><span>${cat.name}</span><span class="cat-badge">${count}</span></button>`;
           }).join('');
           const moreButton = children.length > 4 ? `<button type="button" class="category-show-all" data-toggle-all="${activeSubcategoryParentId}">${showAll ? 'عرض أقل' : 'عرض الكل'}</button>` : '';
-          submenu.innerHTML = `<div class="category-submenu-header"><div class="category-submenu-title">${parent.name}</div><button type="button" class="category-submenu-back" data-close-submenu>رجوع</button></div>${items}${moreButton}`;
+          submenu.innerHTML = `<div class="category-submenu-header"><div class="category-submenu-title">${parent.name}</div><button type="button" class="category-submenu-back" data-close-submenu>رجوع</button></div>${mainAllButton}${items}${moreButton}`;
           submenu.classList.add('active');
         }
       } else {
@@ -4216,10 +4229,10 @@
                 ${p.stock > 0 ? `🟢 متوفر (${p.stock})` : '🔴 نفذت الكمية'}
               </span>
               <div class="product-admin-actions ${isAdmin ? 'active' : ''}">
-                <button class="prod-action-btn" title="إنقاص المخزون (-1)" onclick="adjustStock(${p.id}, -1)" style="background:#fee2e2; color:#b91c1c; font-weight:bold;">-</button>
-                <button class="prod-action-btn" title="زيادة المخزون (+1)" onclick="adjustStock(${p.id}, 1)" style="background:#d1fae5; color:#047857; font-weight:bold;">+</button>
-                <button class="prod-action-btn edit" title="تعديل المنتج" onclick="editProduct(${p.id})">✏️</button>
-                <button class="prod-action-btn del" title="حذف المنتج" onclick="deleteProduct(${p.id})">🗑️</button>
+                <button class="prod-action-btn" title="إنقاص المخزون (-1)" onclick="event.stopPropagation(); adjustStock(${p.id}, -1)" style="background:#fee2e2; color:#b91c1c; font-weight:bold;">-</button>
+                <button class="prod-action-btn" title="زيادة المخزون (+1)" onclick="event.stopPropagation(); adjustStock(${p.id}, 1)" style="background:#d1fae5; color:#047857; font-weight:bold;">+</button>
+                <button class="prod-action-btn edit" title="تعديل المنتج" onclick="event.stopPropagation(); editProduct(${p.id})">✏️</button>
+                <button class="prod-action-btn del" title="حذف المنتج" onclick="event.stopPropagation(); deleteProduct(${p.id})">🗑️</button>
               </div>
             </div>
             <div class="product-details">
@@ -4569,6 +4582,21 @@
     function closeProductModal() {
       document.getElementById("productModal").classList.remove("active");
       activeUploadedImages = [];
+      // Release the page scroll lock after the product form closes.
+      // Keep it only if another full-screen modal/drawer is still open.
+      const otherOverlayOpen = Array.from(document.querySelectorAll(
+        '.modal-overlay.active, .drawer-overlay.active, #catDrawer.active, #cartDrawer.active'
+      )).some(el => el.id !== 'productModal');
+      if (!otherOverlayOpen) {
+        document.documentElement.classList.remove('modal-open');
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('position');
+        document.body.style.removeProperty('top');
+        document.body.style.removeProperty('width');
+        document.body.style.removeProperty('height');
+        document.body.style.removeProperty('overflow');
+        document.documentElement.style.removeProperty('overflow');
+      }
     }
 
     function handleProductModalClick(e) {
@@ -4799,16 +4827,24 @@
         ? `هل أنت متأكد من حذف القسم الرئيسي "${category.name}" وجميع أقسامه الفرعية؟ المنتجات (${affectedProducts}) ستظل محفوظة وستظهر ضمن كل المنتجات.`
         : `هل أنت متأكد من حذف القسم "${category.name}"؟ المنتجات (${affectedProducts}) ستظل محفوظة وستظهر ضمن كل المنتجات.`;
       showCustomConfirm('حذف القسم', message, () => {
-        // Delete the selected category and its entire descendant tree. Do not promote
-        // children to root categories, which made a deleted main category appear to remain.
+        // Record every deleted ID before saving. Cloud snapshots older than this
+        // deletion must never be allowed to restore these categories on page reload.
+        idsToDelete.forEach(id => deletedCategoryIds.add(String(id)));
+        persistDeletedCategoryIds();
         categories = categories.filter(c => !idsToDelete.has(String(c.id)));
         products.forEach(p => { if (idsToDelete.has(String(p.category))) p.category = 'all'; });
         if (idsToDelete.has(String(currentCategory))) currentCategory = 'all';
         if (idsToDelete.has(String(activeSubcategoryParentId))) activeSubcategoryParentId = null;
         idsToDelete.forEach(id => expandedSubcategoryLists.delete(id));
-        saveCategories();
-        saveProducts();
+        try {
+          localStorage.setItem('panda_categories', JSON.stringify(categories));
+          localStorage.setItem('panda_products', JSON.stringify(products));
+        } catch (e) { console.error('Could not save category deletion locally:', e); }
         renderCategoryTabs(); renderCategoryManagerList(); renderProducts(); updateCartUI(); resetCategoryForm();
+        // One cloud write only, after both categories and products are updated.
+        syncToCloudNow(false).then(ok => {
+          if (!ok) showToast('تم الحذف على هذا الجهاز، لكن تعذرت مزامنته مع السحابة. تحقق من إعدادات JSONBin.');
+        });
         showToast('تم حذف القسم وأقسامه الفرعية بنجاح');
       });
     }
@@ -5129,6 +5165,15 @@
             ${prod.desc || 'لا توجد تفاصيل إضافية مسجلة لهذا المنتج.'}
           </div>
 
+          ${isAdmin ? `
+            <div class="detail-admin-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;padding:12px;border:1px solid var(--border-color, #e5e7eb);border-radius:12px;">
+              <strong style="width:100%;">إدارة المنتج</strong>
+              <button class="btn" type="button" onclick="adjustStock(${prod.id}, -1); openProductDetailModal(${prod.id});">➖ إنقاص المخزون</button>
+              <button class="btn" type="button" onclick="adjustStock(${prod.id}, 1); openProductDetailModal(${prod.id});">➕ زيادة المخزون</button>
+              <button class="btn btn-primary" type="button" onclick="closeProductDetailModal(); editProduct(${prod.id});">✏️ تعديل المنتج</button>
+              <button class="btn" type="button" style="background:#fee2e2;color:#b91c1c;" onclick="closeProductDetailModal(); deleteProduct(${prod.id});">🗑️ حذف المنتج</button>
+            </div>
+          ` : ''}
           <div style="display: flex; gap: 10px;">
             <button class="btn btn-primary" style="flex: 1; justify-content: center; padding: 12px;" onclick="addToCart(${prod.id}); closeProductDetailModal();">
               🛒 إضافة إلى السلة
@@ -5478,6 +5523,7 @@
         const payload = {
           categories: categories,
           products: products,
+          deletedCategoryIds: Array.from(deletedCategoryIds),
           updatedAt: Date.now()
         };
 
@@ -5539,6 +5585,12 @@
         const record = data.record ? data.record : data;
 
         if (record && Array.isArray(record.categories) && Array.isArray(record.products)) {
+          // Merge deletion markers first so stale cloud/local/default copies cannot resurrect categories.
+          if (Array.isArray(record.deletedCategoryIds)) {
+            record.deletedCategoryIds.forEach(id => deletedCategoryIds.add(String(id)));
+            persistDeletedCategoryIds();
+          }
+          const isDeletedCategory = item => item && deletedCategoryIds.has(String(item.id));
           // Protect the catalog: merge cloud data with local and built-in data.
           // Existing IDs are updated from the cloud, while local-only items are retained.
           const localCategories = Array.isArray(categories) ? categories : [];
@@ -5557,7 +5609,7 @@
 
           const previousProductCount = record.products.length;
           const previousCategoryCount = record.categories.length;
-          categories = mergeById([defaultCategories, localCategories, record.categories]);
+          categories = mergeById([defaultCategories, localCategories, record.categories]).filter(c => !isDeletedCategory(c));
           products = mergeById([defaultProducts, localProducts, record.products]);
           sortProductsNewestFirst();
 
