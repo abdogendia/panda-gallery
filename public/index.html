@@ -2309,7 +2309,9 @@
     .customer-flash-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;color:#713f12;font-weight:900}
     .customer-flash-track{display:flex;gap:10px;overflow-x:auto;padding:2px 1px 8px;scroll-snap-type:x mandatory}
     .customer-flash-item{flex:0 0 min(210px,72vw);scroll-snap-align:start;background:#fff;border:1px solid #f1d7a6;border-radius:12px;padding:10px;cursor:pointer;text-align:right;color:#38251b}
-    .customer-flash-item strong{display:block;font-size:14px;margin-bottom:5px}
+    .customer-flash-item strong{display:block;font-size:14px;margin:7px 0 5px}
+    .customer-flash-image{display:block;width:100%;height:138px;object-fit:contain;background:#fff;border-radius:9px;border:1px solid #f3e5cd}
+    .customer-flash-image-placeholder{height:138px;display:flex;align-items:center;justify-content:center;background:#fff8ed;border-radius:9px;color:#9a8060;font-size:34px}
     .customer-flash-price{color:#c62828;font-weight:900;font-size:16px}
     .customer-flash-old{color:#888;text-decoration:line-through;font-size:12px;margin-inline-start:6px}
     .customer-flash-time{display:block;color:#7c6a57;font-size:11px;margin-top:5px}
@@ -3931,13 +3933,23 @@
       loadCart();
       const savedPage = parseInt(localStorage.getItem('panda_current_page') || '1', 10);
       currentPage = Number.isFinite(savedPage) && savedPage > 0 ? savedPage : 1;
-      // Always show the welcome screen on page load; only enterCatalog() opens the catalog.
+      // Remember visitors who have already entered the catalog on this browser.
+      // First-time visitors see the welcome screen; returning visitors go straight to the catalog.
       const welcome = document.getElementById('welcomeScreen');
-      if (welcome) {
-        welcome.style.display = 'flex';
-        welcome.classList.remove('is-hidden');
+      let hasEnteredCatalog = false;
+      try { hasEnteredCatalog = localStorage.getItem('panda_catalog_entered') === 'true'; }
+      catch (e) { console.warn('Could not read catalog entry state:', e); }
+      if (welcome && hasEnteredCatalog) {
+        welcome.classList.add('is-hidden');
+        welcome.style.display = 'none';
+        document.body.classList.remove('welcome-active');
+      } else {
+        if (welcome) {
+          welcome.style.display = 'flex';
+          welcome.classList.remove('is-hidden');
+        }
+        document.body.classList.add('welcome-active');
       }
-      document.body.classList.add('welcome-active');
       applyCustomCover(localStorage.getItem('panda_custom_cover'));
       renderCategoryTabs();
       renderProducts();
@@ -4404,7 +4416,7 @@
       const active = products.filter(p => isFlashSaleActive(p));
       if (!active.length) { section.hidden = true; section.innerHTML = ''; return; }
       section.hidden = false;
-      section.innerHTML = `<div class="customer-flash-head"><span>⚡ العروض السريعة</span><span class="pg-flash-active">${active.length} عرض متاح</span></div><div class="customer-flash-track">${active.map(p => `<button type="button" class="customer-flash-item" onclick="openProductDetailModal(${Number(p.id)})"><strong>${escapePg(p.title)}</strong><span class="customer-flash-price">${Number(p.flashSale.price)} ج.م</span><span class="customer-flash-old">${Number(p.price)} ج.م</span><span class="customer-flash-time">ينتهي: ${new Date(p.flashSale.end).toLocaleString('ar-EG')}</span></button>`).join('')}</div>`;
+      section.innerHTML = `<div class="customer-flash-head"><span>⚡ العروض السريعة</span><span class="pg-flash-active">${active.length} عرض متاح</span></div><div class="customer-flash-track">${active.map(p => { const rawImages = Array.isArray(p.img) ? p.img : (Array.isArray(p.images) ? p.images : [p.img || p.image || p.imageUrl || '']); const imageUrl = rawImages.find(v => typeof v === 'string' && v.trim()) || ''; const imageMarkup = imageUrl ? `<img class="customer-flash-image" src="${escapePg(imageUrl)}" alt="${escapePg(p.title)}" loading="lazy" onerror="this.outerHTML='<div class=&quot;customer-flash-image-placeholder&quot;>🛍️</div>'">` : `<div class="customer-flash-image-placeholder">🛍️</div>`; return `<button type="button" class="customer-flash-item" onclick="openProductDetailModal(${Number(p.id)})">${imageMarkup}<strong>${escapePg(p.title)}</strong><span class="customer-flash-price">${Number(p.flashSale.price)} ج.م</span><span class="customer-flash-old">${Number(p.price)} ج.م</span><span class="customer-flash-time">ينتهي: ${new Date(p.flashSale.end).toLocaleString('ar-EG')}</span></button>`; }).join('')}</div>`;
     }
 
     // Render Products Grid with Multi-Image Slider & Pagination (20 per page)
