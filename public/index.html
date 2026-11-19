@@ -2297,6 +2297,24 @@
     .product-card-toggle .toggle-chevron { transition: transform .25s ease; }
     .product-card:not(.is-collapsed) .product-card-toggle .toggle-chevron { transform: rotate(180deg); }
 
+  
+    .pg-review-box,.pg-stock-box,.pg-flash-box{border:1px solid var(--border);border-radius:12px;padding:12px;margin:12px 0;background:var(--card-bg)}
+    .pg-stars{color:#d99a20;font-size:20px;letter-spacing:2px}.pg-muted{color:var(--text-muted);font-size:12px}
+    .pg-admin-feature{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+    .pg-admin-feature button{font-size:12px}
+    .pg-alert-row{display:flex;justify-content:space-between;gap:8px;padding:9px;border-bottom:1px solid var(--border);font-size:13px}
+    .pg-flash-active{background:#fff1df;color:#9a3412;border-radius:8px;padding:5px 8px;font-weight:800;font-size:12px}
+    .customer-flash-sales{margin:14px 0 18px;padding:14px;border:1px solid #f2c879;border-radius:16px;background:linear-gradient(135deg,#fff8e8,#fff0d3);}
+    .customer-flash-sales[hidden]{display:none!important}
+    .customer-flash-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;color:#713f12;font-weight:900}
+    .customer-flash-track{display:flex;gap:10px;overflow-x:auto;padding:2px 1px 8px;scroll-snap-type:x mandatory}
+    .customer-flash-item{flex:0 0 min(210px,72vw);scroll-snap-align:start;background:#fff;border:1px solid #f1d7a6;border-radius:12px;padding:10px;cursor:pointer;text-align:right;color:#38251b}
+    .customer-flash-item strong{display:block;font-size:14px;margin-bottom:5px}
+    .customer-flash-price{color:#c62828;font-weight:900;font-size:16px}
+    .customer-flash-old{color:#888;text-decoration:line-through;font-size:12px;margin-inline-start:6px}
+    .customer-flash-time{display:block;color:#7c6a57;font-size:11px;margin-top:5px}
+
+
   </style>
 </head>
 <body class="welcome-active">
@@ -2334,6 +2352,9 @@
       <button class="btn-admin-link" onclick="openCategoryModal()">🏷️ إدارة الأقسام</button>
       <button class="btn-admin-link" onclick="openCouponManager()">🎟️ إدارة الكوبونات</button>
       <button class="btn-admin-link" onclick="openAnnouncementManager()">📢 إدارة شريط الإعلانات</button>
+      <button class="btn-admin-link" onclick="openSmartStockAlerts()">🔔 تنبيهات المخزون</button>
+      <button class="btn-admin-link" onclick="openFlashSaleManager()">⏰ إدارة العروض السريعة</button>
+      <button class="btn-admin-link" onclick="openReviewManager()">⭐ إدارة التقييمات</button>
       <button class="btn-admin-link btn-cloud full-span" onclick="openCloudSyncModal()">☁️ إعداد المزامنة السحابية (تحديث تلقائي)</button>
       <button class="btn-admin-link btn-publish full-span" onclick="publishCatalogToHtml()">🚀 حفظ ونشر للجميع (تحميل index.html)</button>
       <button class="btn-admin-link" onclick="openBackupModal()">📦 نقل البيانات</button>
@@ -2386,6 +2407,7 @@
       </div>
     </div>
     <div class="coupon-promo-strip" id="catalogCouponPromotions" aria-live="polite"></div>
+    <section id="customerFlashSales" class="customer-flash-sales" aria-label="العروض السريعة" hidden></section>
 
     <!-- Admin Toolbar in Catalog (Visible ONLY to Admin) -->
     <div class="catalog-admin-bar" id="catalogAdminBar">
@@ -2597,6 +2619,10 @@
     </div>
   </div>
 
+  <!-- Panda Gallery Feature Managers -->
+  <div class="modal-overlay" id="pgStockModal" onclick="if(event.target===this)closePgModal('pgStockModal')"><div class="modal-card" style="max-width:620px;max-height:88vh;overflow:auto"><div class="modal-header"><div class="modal-title">🔔 تنبيهات المخزون</div><button class="drawer-close" onclick="closePgModal('pgStockModal')">✕</button></div><div id="pgStockList" style="padding:14px"></div></div></div>
+  <div class="modal-overlay" id="pgFlashModal" onclick="if(event.target===this)closePgModal('pgFlashModal')"><div class="modal-card" style="max-width:620px;max-height:90vh;overflow:auto"><div class="modal-header"><div class="modal-title">⏰ إدارة العروض السريعة</div><button class="drawer-close" onclick="closePgModal('pgFlashModal')">✕</button></div><div style="padding:14px"><label class="form-label">المنتج</label><select id="pgFlashProduct" class="form-select"></select><label class="form-label">سعر العرض (ج.م)</label><input id="pgFlashPrice" type="number" min="1" step="0.01" class="form-input"><label class="form-label">بداية العرض</label><input id="pgFlashStart" type="datetime-local" class="form-input"><label class="form-label">نهاية العرض</label><input id="pgFlashEnd" type="datetime-local" class="form-input"><div class="form-actions"><button class="btn btn-outline" onclick="clearFlashSale()">إلغاء العرض للمنتج</button><button class="btn btn-primary" onclick="saveFlashSale()">حفظ العرض</button></div><div id="pgFlashList" style="margin-top:14px"></div></div></div></div>
+  <div class="modal-overlay" id="pgReviewModal" onclick="if(event.target===this)closePgModal('pgReviewModal')"><div class="modal-card" style="max-width:680px;max-height:90vh;overflow:auto"><div class="modal-header"><div class="modal-title">⭐ إدارة تقييمات العملاء</div><button class="drawer-close" onclick="closePgModal('pgReviewModal')">✕</button></div><div id="pgReviewList" style="padding:14px"></div></div></div>
   <!-- Admin Login Modal -->
   <div class="modal-overlay" id="adminLoginModal" onclick="handleAdminLoginModalClick(event)">
     <div class="modal-card" style="max-width: 420px;">
@@ -2690,6 +2716,7 @@
           <input type="number" id="prodStock" class="form-input" placeholder="مثال: 15" min="0" value="10" required />
         </div>
 
+        <div class="form-group"><label class="form-label">حد تنبيه انخفاض المخزون</label><input type="number" id="prodStockThreshold" class="form-input" min="0" step="1" value="3"><small class="pg-muted">يظهر تنبيه للمدير عندما تصبح الكمية مساوية لهذا الرقم أو أقل.</small></div>
         <div class="form-group">
           <label class="form-label">ألوان المنتج ومخزون كل لون 🎨 (اختياري)</label>
           <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap;">
@@ -3847,6 +3874,29 @@
     }
     function getCouponDiscount() { const c=getAppliedCoupon(); const subtotal=cart.reduce((sum,item)=>sum+(Number(item.price)*Number(item.qty)),0); return c?Math.min(subtotal,Number(c.amount)||0):0; }
 
+    // Reviews, scheduled flash sales, and per-product stock thresholds.
+    let pgReviews = (()=>{try{return JSON.parse(localStorage.getItem('panda_reviews_v1')||'[]')}catch(e){return []}})();
+    function savePgReviews(){localStorage.setItem('panda_reviews_v1',JSON.stringify(pgReviews));syncToCloudNow(false);}
+    function closePgModal(id){const el=document.getElementById(id);if(el)el.classList.remove('active');if(!document.querySelector('.modal-overlay.active')){document.documentElement.classList.remove('modal-open');document.body.classList.remove('modal-open')}}
+    function openSmartStockAlerts(){if(!isAdmin){openAdminLoginModal();return}const rows=products.filter(p=>Number(p.stock||0)<=Number(p.stockAlertThreshold??3)).sort((a,b)=>Number(a.stock||0)-Number(b.stock||0));document.getElementById('pgStockList').innerHTML=rows.length?rows.map(p=>`<div class="pg-alert-row"><span><b>${escapePg(p.title)}</b><br><small>المخزون: ${Number(p.stock)||0} · حد التنبيه: ${Number(p.stockAlertThreshold??3)}</small></span><span style="color:${Number(p.stock)<=0?'#dc2626':'#b45309'};font-weight:900">${Number(p.stock)<=0?'نفد المخزون':'مخزون منخفض'}</span></div>`).join(''):'<p>لا توجد منتجات منخفضة المخزون حالياً 🎉</p>';document.getElementById('pgStockModal').classList.add('active');document.documentElement.classList.add('modal-open');document.body.classList.add('modal-open')}
+    function openFlashSaleManager(){if(!isAdmin){openAdminLoginModal();return}const sel=document.getElementById('pgFlashProduct');sel.innerHTML=products.map(p=>`<option value="${p.id}">${escapePg(p.title)}</option>`).join('');sel.onchange=loadFlashSaleForm;renderFlashSaleList();loadFlashSaleForm();document.getElementById('pgFlashModal').classList.add('active');document.documentElement.classList.add('modal-open');document.body.classList.add('modal-open')}
+    function loadFlashSaleForm(){const p=products.find(x=>String(x.id)===document.getElementById('pgFlashProduct').value);document.getElementById('pgFlashPrice').value=p?.flashSale?.price||'';document.getElementById('pgFlashStart').value=p?.flashSale?.start||'';document.getElementById('pgFlashEnd').value=p?.flashSale?.end||''}
+    function saveFlashSale(){const p=products.find(x=>String(x.id)===document.getElementById('pgFlashProduct').value);const price=Number(document.getElementById('pgFlashPrice').value),start=document.getElementById('pgFlashStart').value,end=document.getElementById('pgFlashEnd').value;if(!p||!price||price<=0||price>=Number(p.price)||!start||!end||new Date(end)<=new Date(start)){showCustomAlert('بيانات غير صحيحة','يجب إدخال سعر أقل من السعر الأصلي ووقت نهاية بعد البداية.','⚠️');return}p.flashSale={price,start,end};saveProducts();renderFlashSaleList();renderProducts();showToast('تم حفظ العرض السريع');}
+    function clearFlashSale(){const p=products.find(x=>String(x.id)===document.getElementById('pgFlashProduct').value);if(p){delete p.flashSale;saveProducts();loadFlashSaleForm();renderFlashSaleList();renderProducts();}}
+    function renderFlashSaleList(){const el=document.getElementById('pgFlashList');if(!el)return;el.innerHTML=products.filter(p=>p.flashSale).map(p=>`<div class="pg-alert-row"><span>${escapePg(p.title)}<br><small>${Number(p.flashSale.price)} ج.م · ${escapePg(p.flashSale.start)} → ${escapePg(p.flashSale.end)}</small></span><b>${isFlashSaleActive(p)?'نشط الآن':'مجدول / منتهٍ'}</b></div>`).join('')||'<p class="pg-muted">لا توجد عروض سريعة.</p>'}
+    function isFlashSaleActive(p){return !!(p?.flashSale&&Date.now()>=new Date(p.flashSale.start).getTime()&&Date.now()<=new Date(p.flashSale.end).getTime()&&Number(p.flashSale.price)>0&&Number(p.flashSale.price)<Number(p.price))}
+    function openReviewManager(){if(!isAdmin){openAdminLoginModal();return}const el=document.getElementById('pgReviewList');el.innerHTML=pgReviews.length?pgReviews.slice().reverse().map(r=>`<div class="pg-review-box"><b>${escapePg(r.productTitle||'منتج')}</b> · ${escapePg(r.name||'عميل')} <span class="pg-stars">${'★'.repeat(r.rating||0)}${'☆'.repeat(5-(r.rating||0))}</span><p>${escapePg(r.comment||'')}</p><small>${r.approved?'منشور':'بانتظار الموافقة'}</small><div class="pg-admin-feature"><button class="btn btn-primary" onclick="approvePgReview('${r.id}')">موافقة</button><button class="btn btn-outline" onclick="deletePgReview('${r.id}')">حذف</button></div></div>`).join(''):'<p>لا توجد تقييمات حتى الآن.</p>';document.getElementById('pgReviewModal').classList.add('active');document.documentElement.classList.add('modal-open');document.body.classList.add('modal-open')}
+    function approvePgReview(id){const r=pgReviews.find(x=>x.id===id);if(r){r.approved=true;savePgReviews();openReviewManager()}}
+    function deletePgReview(id){pgReviews=pgReviews.filter(x=>x.id!==id);savePgReviews();openReviewManager()}
+    function submitPgReview(id){const p=products.find(x=>String(x.id)===String(id));const name=document.getElementById('pgReviewName').value.trim();const rating=Number(document.getElementById('pgReviewRating').value);const comment=document.getElementById('pgReviewComment').value.trim();if(!name||!rating||!comment){showCustomAlert('بيانات ناقصة','أدخل الاسم والتقييم والتعليق.','⚠️');return}pgReviews.push({id:'review_'+Date.now(),productId:p.id,productTitle:p.title,name,rating,comment,approved:false,createdAt:new Date().toISOString()});savePgReviews();showToast('شكراً لتقييمك! سيظهر بعد مراجعة الإدارة ⭐');document.getElementById('pgReviewComment').value='';}
+    function escapePg(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+    function getProductPrice(product) {
+      const original=Number(product&&product.price)||0;
+      if(isFlashSaleActive(product)) return Number(product.flashSale.price);
+      const discounted=Number(product&&product.discountPrice);
+      return Number.isFinite(discounted)&&discounted>0&&discounted<original?discounted:original;
+    }
+
     function loadCart() {
       try {
         const saved = JSON.parse(localStorage.getItem(CART_STORAGE_KEY) || '[]');
@@ -3881,11 +3931,13 @@
       loadCart();
       const savedPage = parseInt(localStorage.getItem('panda_current_page') || '1', 10);
       currentPage = Number.isFinite(savedPage) && savedPage > 0 ? savedPage : 1;
-      if (localStorage.getItem('panda_catalog_entered') === 'true') {
-        const welcome = document.getElementById('welcomeScreen');
-        if (welcome) welcome.style.display = 'none';
-        document.body.classList.remove('welcome-active');
+      // Always show the welcome screen on page load; only enterCatalog() opens the catalog.
+      const welcome = document.getElementById('welcomeScreen');
+      if (welcome) {
+        welcome.style.display = 'flex';
+        welcome.classList.remove('is-hidden');
       }
+      document.body.classList.add('welcome-active');
       applyCustomCover(localStorage.getItem('panda_custom_cover'));
       renderCategoryTabs();
       renderProducts();
@@ -4346,8 +4398,18 @@
       }
     }
 
+    function renderCustomerFlashSales() {
+      const section = document.getElementById('customerFlashSales');
+      if (!section) return;
+      const active = products.filter(p => isFlashSaleActive(p));
+      if (!active.length) { section.hidden = true; section.innerHTML = ''; return; }
+      section.hidden = false;
+      section.innerHTML = `<div class="customer-flash-head"><span>⚡ العروض السريعة</span><span class="pg-flash-active">${active.length} عرض متاح</span></div><div class="customer-flash-track">${active.map(p => `<button type="button" class="customer-flash-item" onclick="openProductDetailModal(${Number(p.id)})"><strong>${escapePg(p.title)}</strong><span class="customer-flash-price">${Number(p.flashSale.price)} ج.م</span><span class="customer-flash-old">${Number(p.price)} ج.م</span><span class="customer-flash-time">ينتهي: ${new Date(p.flashSale.end).toLocaleString('ar-EG')}</span></button>`).join('')}</div>`;
+    }
+
     // Render Products Grid with Multi-Image Slider & Pagination (20 per page)
     function renderProducts() {
+      renderCustomerFlashSales();
       const grid = document.getElementById("productGrid");
       const pagination = document.getElementById("paginationContainer");
       if (!grid) return;
@@ -4739,6 +4801,7 @@
         document.getElementById("prodDiscountPrice").value = prod.discountPrice || '';
         document.getElementById("prodBadge").value = prod.badge || '';
         document.getElementById("prodStock").value = (typeof prod.stock === 'number') ? prod.stock : 10;
+        document.getElementById("prodStockThreshold").value = prod.stockAlertThreshold ?? 3;
         document.getElementById("prodDesc").value = prod.desc || '';
         document.getElementById("prodImgUrl").value = '';
         
@@ -4751,6 +4814,7 @@
         document.getElementById("productForm").reset();
         document.getElementById("editProductId").value = '';
         document.getElementById("prodDiscountPrice").value = '';
+        document.getElementById("prodStockThreshold").value = 3;
         activeModalColors = [];
         renderModalThumbnails();
         renderAdminColorList();
@@ -4803,6 +4867,7 @@
       }
       const badge = document.getElementById("prodBadge").value.trim();
       const stock = parseInt(document.getElementById("prodStock").value) || 0;
+      const stockAlertThreshold = Math.max(0, parseInt(document.getElementById("prodStockThreshold").value) || 0);
       const desc = document.getElementById("prodDesc").value.trim();
 
       let finalImages = activeUploadedImages.length ? [...activeUploadedImages] : [
@@ -4825,6 +4890,7 @@
           else item.discountPrice = discountPrice;
           item.badge = badge;
           item.stock = computedStock;
+          item.stockAlertThreshold = stockAlertThreshold;
           item.colors = finalColors;
           item.img = finalImages;
           item.desc = desc;
@@ -4844,6 +4910,7 @@
           ...(discountPrice !== null ? { discountPrice } : {}),
           badge,
           stock: computedStock,
+          stockAlertThreshold,
           colors: finalColors,
           img: finalImages,
           desc,
@@ -5358,6 +5425,7 @@
             ${prod.desc || 'لا توجد تفاصيل إضافية مسجلة لهذا المنتج.'}
           </div>
 
+          <div class="pg-review-box"><strong>⭐ تقييمات العملاء</strong><div class="pg-muted">${pgReviews.filter(r=>String(r.productId)===String(prod.id)&&r.approved).length} تقييم منشور</div>${pgReviews.filter(r=>String(r.productId)===String(prod.id)&&r.approved).map(r=>`<div style="padding:8px 0;border-top:1px solid var(--border)"><b>${escapePg(r.name)}</b> <span class="pg-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span><div>${escapePg(r.comment)}</div></div>`).join('')}<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px"><b>أضف تقييمك</b><input id="pgReviewName" class="form-input" placeholder="اسمك" style="margin:7px 0"><select id="pgReviewRating" class="form-select"><option value="">اختر عدد النجوم</option><option value="5">5 نجوم</option><option value="4">4 نجوم</option><option value="3">3 نجوم</option><option value="2">نجمتان</option><option value="1">نجمة واحدة</option></select><textarea id="pgReviewComment" class="form-textarea" placeholder="اكتب رأيك في المنتج" style="margin:7px 0"></textarea><button class="btn btn-primary" type="button" onclick="submitPgReview(${prod.id})">إرسال التقييم</button></div></div>
           ${isAdmin ? `
             <div class="detail-admin-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;padding:12px;border:1px solid var(--border-color, #e5e7eb);border-radius:12px;">
               <strong style="width:100%;">إدارة المنتج</strong>
@@ -5718,6 +5786,7 @@
           products: products,
           coupons: coupons,
           announcementSettings: announcementSettings,
+          reviews: pgReviews,
           deletedCategoryIds: Array.from(deletedCategoryIds),
           updatedAt: Date.now()
         };
@@ -5804,6 +5873,7 @@
 
           if (Array.isArray(record.coupons)) { coupons = record.coupons.filter(c => c && c.code && Number(c.amount) > 0).map(c => ({...c, code:String(c.code).toUpperCase(), amount:Number(c.amount), minimum:Math.max(0,Number(c.minimum)||0), active:c.active!==false})); localStorage.setItem('panda_coupons_v1', JSON.stringify(coupons));  renderCouponPromotions(); }
           if(record.announcementSettings && Array.isArray(record.announcementSettings.messages)){announcementSettings={messages:record.announcementSettings.messages.map(x=>String(x||'').trim()).filter(Boolean),enabled:record.announcementSettings.enabled!==false,speed:Number(record.announcementSettings.speed)||22};localStorage.setItem('panda_announcement_settings_v1',JSON.stringify(announcementSettings));renderAnnouncementTicker();}
+          if(Array.isArray(record.reviews)){pgReviews=record.reviews.filter(r=>r&&r.id&&r.productId);localStorage.setItem('panda_reviews_v1',JSON.stringify(pgReviews));}
           const previousProductCount = record.products.length;
           const previousCategoryCount = record.categories.length;
           categories = mergeById([defaultCategories, localCategories, record.categories]).filter(c => !isDeletedCategory(c));
@@ -5874,6 +5944,7 @@
           products: products,
           coupons: coupons,
           announcementSettings: announcementSettings,
+          reviews: pgReviews,
           updatedAt: Date.now()
         };
 
