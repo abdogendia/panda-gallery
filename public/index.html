@@ -2300,6 +2300,9 @@
   
     .pg-review-box,.pg-stock-box,.pg-flash-box{border:1px solid var(--border);border-radius:12px;padding:12px;margin:12px 0;background:var(--card-bg)}
     .pg-stars{color:#d99a20;font-size:20px;letter-spacing:2px}.pg-muted{color:var(--text-muted);font-size:12px}
+    .product-rating-summary{display:flex;align-items:center;gap:5px;margin:5px 0 8px;direction:ltr;justify-content:flex-end;font-size:13px;color:var(--text-main)}
+    .product-rating-summary .pg-stars{font-size:15px;letter-spacing:1px;line-height:1}
+    .product-rating-summary small{color:var(--text-muted);font-size:11px}
     .pg-admin-feature{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
     .pg-admin-feature button{font-size:12px}
     .pg-alert-row{display:flex;justify-content:space-between;gap:8px;padding:9px;border-bottom:1px solid var(--border);font-size:13px}
@@ -2467,6 +2470,18 @@
                     <option value="default">الترتيب الافتراضي</option>
                     <option value="low-high">من الأقل للأعلى</option>
                     <option value="high-low">من الأعلى للأقل</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="ratingFilterSelect" style="display:block; font-weight:700; color:var(--text-main); margin-bottom:7px;">تقييم العملاء ⭐</label>
+                  <select id="ratingFilterSelect" class="form-select" style="width:100%;" onchange="handleCatalogFilters()">
+                    <option value="all">كل التقييمات</option>
+                    <option value="5">5 نجوم</option>
+                    <option value="4">4 نجوم فأكثر</option>
+                    <option value="3">3 نجوم فأكثر</option>
+                    <option value="2">نجمتان فأكثر</option>
+                    <option value="1">نجمة فأكثر</option>
+                    <option value="none">بدون تقييم</option>
                   </select>
                 </div>
               </div>
@@ -4423,6 +4438,22 @@
       section.innerHTML = `<div class="customer-flash-head"><span>⚡ العروض السريعة</span><span class="pg-flash-active">${active.length} عرض متاح</span></div><div class="customer-flash-track">${active.map(p => { const rawImages = Array.isArray(p.img) ? p.img : (Array.isArray(p.images) ? p.images : [p.img || p.image || p.imageUrl || '']); const imageUrl = rawImages.find(v => typeof v === 'string' && v.trim()) || ''; const imageMarkup = imageUrl ? `<img class="customer-flash-image" src="${escapePg(imageUrl)}" alt="${escapePg(p.title)}" loading="lazy" onerror="this.outerHTML='<div class=&quot;customer-flash-image-placeholder&quot;>🛍️</div>'">` : `<div class="customer-flash-image-placeholder">🛍️</div>`; return `<button type="button" class="customer-flash-item" onclick="openProductDetailModal(${Number(p.id)})">${imageMarkup}<strong>${escapePg(p.title)}</strong><span class="customer-flash-price">${Number(p.flashSale.price)} ج.م</span><span class="customer-flash-old">${Number(p.price)} ج.م</span><span class="customer-flash-time">ينتهي: ${new Date(p.flashSale.end).toLocaleString('ar-EG')}</span></button>`; }).join('')}</div>`;
     }
 
+    // Average rating is calculated from approved customer reviews only.
+    function getProductRatingSummary(productId) {
+      const reviews = (Array.isArray(pgReviews) ? pgReviews : []).filter(r => String(r.productId) === String(productId) && r.approved && Number(r.rating) >= 1 && Number(r.rating) <= 5);
+      if (!reviews.length) return { average: 0, count: 0 };
+      const average = reviews.reduce((sum, review) => sum + Number(review.rating), 0) / reviews.length;
+      return { average, count: reviews.length };
+    }
+
+    function renderProductRating(productId) {
+      const summary = getProductRatingSummary(productId);
+      if (!summary.count) return '';
+      const rounded = Math.round(summary.average * 10) / 10;
+      const fullStars = Math.round(summary.average);
+      return `<div class="product-rating-summary" aria-label="تقييم ${rounded} من 5 بناءً على ${summary.count} تقييم"><span class="pg-stars">${'★'.repeat(fullStars)}${'☆'.repeat(5-fullStars)}</span><strong>${rounded.toFixed(1)}</strong><small>(${summary.count})</small></div>`;
+    }
+
     // Render Products Grid with Multi-Image Slider & Pagination (20 per page)
     function renderProducts() {
       renderCustomerFlashSales();
@@ -4433,11 +4464,14 @@
       applyGridColumnsUI();
 
       const priceSort = document.getElementById('priceSortSelect')?.value || 'default';
+      const ratingFilter = document.getElementById('ratingFilterSelect')?.value || 'all';
       const filtered = products.filter(p => {
         const matchesCat = productMatchesCategory(p, currentCategory);
         const matchesSearch = (p.title.includes(searchQuery) || (p.desc && p.desc.includes(searchQuery)));
         const matchesOffer = !offersOnly || hasProductDiscount(p);
-        return matchesCat && matchesSearch && matchesOffer;
+        const rating = getProductRatingSummary(p.id);
+        const matchesRating = ratingFilter === 'all' || (ratingFilter === 'none' ? rating.count === 0 : rating.count > 0 && rating.average >= Number(ratingFilter));
+        return matchesCat && matchesSearch && matchesOffer && matchesRating;
       });
       if (priceSort === 'low-high') filtered.sort((a, b) => getProductPrice(a) - getProductPrice(b));
       if (priceSort === 'high-low') filtered.sort((a, b) => getProductPrice(b) - getProductPrice(a));
@@ -4497,6 +4531,7 @@
             <div class="product-details">
               <span class="product-cat">${getCatName(p.category)}</span>
               <h3 class="product-title" style="cursor: pointer;" onclick="openProductDetailModal(${p.id})" title="اضغط لعرض التفاصيل والصور">${p.title}</h3>
+              ${renderProductRating(p.id)}
               <button class="product-card-toggle" type="button" aria-expanded="false" onclick="toggleProductCard(${p.id}, this)">
                 <span>عرض التفاصيل</span><span class="toggle-chevron">⌄</span>
               </button>
